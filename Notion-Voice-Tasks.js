@@ -1194,7 +1194,8 @@ export default defineComponent({
 		},
 		async moderationCheck(message, configuration) {
 			if (!message) {
-				throw new Error("Message cannot be empty or null.");
+				const error = new Error("Message cannot be empty or null.");
+				await this.createFallbackTask(error)
 			}
 
 			// Initialize the openai object
@@ -1651,8 +1652,8 @@ export default defineComponent({
 			});
 
 			// End the workflow
-			console.log("Ending the workflow...");
-			return $.flow.exit();
+			console.log("Ending the workflow and throwing an error...");
+			throw new Error(error)
 
 		},
 		formatChatResponse(resultsArray, cost, source) {
