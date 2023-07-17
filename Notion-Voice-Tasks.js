@@ -254,39 +254,49 @@ export default defineComponent({
 			label: "Tasks Database",
 			description: "Select your tasks database.",
 			async options({ query, prevContext }) {
-				const notion = new Client({
-					auth: this.notion.$auth.oauth_access_token,
-				});
-
-				let start_cursor = prevContext?.cursor;
-
-				const response = await notion.search({
-					...(query ? { query } : {}),
-					...(start_cursor ? { start_cursor } : {}),
-					page_size: 50,
-					filter: {
-						value: "database",
-						property: "object",
-					},
-					sorts: [
-						{
-							direction: "descending",
-							property: "last_edited_time",
+				try {
+					const notion = new Client({
+						auth: this.notion.$auth.oauth_access_token,
+					});
+	
+					let start_cursor = prevContext?.cursor;
+	
+					const response = await notion.search({
+						...(query ? { query } : {}),
+						...(start_cursor ? { start_cursor } : {}),
+						page_size: 50,
+						filter: {
+							value: "database",
+							property: "object",
 						},
-					],
-				});
-
-				const options = response.results.map((db) => ({
-					label: db.title?.[0]?.plain_text,
-					value: db.id,
-				}));
-
-				return {
-					context: {
-						cursor: response.next_cursor,
-					},
-					options,
-				};
+						sorts: [
+							{
+								direction: "descending",
+								property: "last_edited_time",
+							},
+						],
+					});
+	
+					const options = response.results.map((db) => ({
+						label: db.title?.[0]?.plain_text,
+						value: db.id,
+					}));
+	
+					return {
+						context: {
+							cursor: response.next_cursor,
+						},
+						options,
+					};
+				} catch (error) {
+					console.error(error);
+					return {
+						context: {
+							cursor: null,
+						},
+						options: [],
+					};
+				}
 			},
 			reloadProps: true,
 		},
@@ -688,7 +698,7 @@ export default defineComponent({
 			}
 
 			// Validate the user's input
-			const validatedBody = this.validateUserInput(steps.trigger.event.body);
+			const validatedBody = await this.validateUserInput(steps.trigger.event.body);
 
 			// Initialize OpenAI
 			const configuration = new Configuration({
@@ -843,10 +853,11 @@ export default defineComponent({
 				return results;
 			}
 		},
-		validateUserInput(data) {
+		async validateUserInput(data) {
 			// Check the secret key to ensure the request came from the correct sender
 			if (!data.secret || data.secret !== this.secretKey) {
-				throw new Error("Request secret key is incorrect.");
+				const error = new Error("Secret key in the request doesn't match the one set in the workflow settings.");
+				await this.createFallbackTask(error)
 			}
 
 			// Define the Joi schema for each property in the data
@@ -886,7 +897,8 @@ export default defineComponent({
 			// Construct the date object and check its validity
 			const dateObject = validator.escape(data.date);
 			if (!dayjs(dateObject).isValid()) {
-				throw new Error("Invalid date format.", dateObject);
+				const error = new Error(`Invalid date format. Date object currently is formatted as: ${dateObject}. Please use ISO 8601 format.`);
+				await this.createFallbackTask(error)
 			}
 
 			// Construct the data object
@@ -903,8 +915,13 @@ export default defineComponent({
 
 			// If there is an error, return the error message
 			if (error) {
-				throw new Error("Invalid data: " + error.message);
+				const joiError = new Error(`Joi error: ${error}`);
+				await this.createFallbackTask(joiError)
 			}
+
+			// Log the value
+			console.log("Validated Joi Object")
+			console.log(value);
 
 			// If there is no error, return the validated data
 			return value;
@@ -1584,6 +1601,60 @@ export default defineComponent({
 
 			return filter;
 		},
+		async createFallbackTask(error) {
+			/** This method creates a "fallback" task in Notion with all the task details
+			 *  spoken by the user. It is called if something fails in the ChatGPT steps, 
+			 * 	ensuring that the user's task is still captured in Notion.
+			 */
+
+			const $ = config.pipedream
+			
+			// Log the error
+			console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion...");
+
+			// Create the task object
+			const task = {
+				task: `[CHATGPT FAILED TO PARSE]: ${config.original_body.task}`,
+				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
+			}
+
+			// Create a Notion connection
+			const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
+
+			// Create the Notion-compliant task object
+			console.log("Creating a Notion-compliant task object...")
+			const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
+
+			// Place the task object into an array
+			const taskArray = [notionObject];
+
+			// Send the task to Notion
+			console.log("Sending the task to Notion...");
+			const response = await this.createTasks(taskArray, notion);
+
+			const taskID = response[0].id;
+			const taskURL = `https://notion.so/${taskID.replace(/-/g, "")}`;
+
+			// Send an email to the user
+			console.log("Sending an email to the user with error details...");
+			$.send.email({
+				subject: "[Notion Voice Tasks] – ChatGPT Error",
+				text: `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${taskURL}.\n\nThe full error message is:\n\n${error}`,
+			})
+
+			// Send the response to the user
+			console.log("Sending an HTTP response to the user...");
+			await $.respond({
+				status: 200,
+				headers: {},
+				body: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`,
+			});
+
+			// End the workflow
+			console.log("Ending the workflow...");
+			return $.flow.exit();
+
+		},
 		formatChatResponse(resultsArray, cost, source) {
 			// To do: Make sure this works, call it from run()
 			return resultsArray.map((result) =>
@@ -1820,6 +1891,12 @@ export default defineComponent({
 		// Grab the current datetime string from the trigger
 		const current_date = steps.trigger.event.body.date;
 
+		// Add the original body to the config (used as a fallback if ChatGPT fails)
+		config.original_body = steps.trigger.event.body;
+
+		// Add the pipedream object to the config
+		config.pipedream = $;
+
 		// Initialize the Notion SDK
 		const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
 
@@ -1881,8 +1958,14 @@ export default defineComponent({
 		console.log(JSON.stringify(formattedResponse));
 		console.log(formattedResponse);
 
+		console.log("Sending tasks to Notion...")
+
 		// Create the tasks in Notion
 		const notionResponse = await this.createTasks(formattedResponse, notion);
+
+		// Log the response
+		console.log("Notion response:");
+		console.log(notionResponse);
 
 		// Sent the response to the user
 		await this.sendResponse(
