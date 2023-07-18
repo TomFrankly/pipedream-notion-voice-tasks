@@ -1,16 +1,3 @@
-/** 
- * To Do:
- * 
- * - Add support for attaching content projects in Creator's Companion
- * - - Create dynamic prop if Content relation is found
- * - - Figure out keyword ("Content Project"?)
- * - - Add to config, findMatch, etc
- * - Update instructions:
- * - - Anchor link for generic HTTP requests
- * - - Tasker and Shortcuts share links
- * - Refactor fallbacks into a single method with more args
- */
-
 // Import dependencies
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
@@ -250,12 +237,13 @@ export default defineComponent({
 		openai: {
 			type: "app",
 			app: "openai",
-			description: `## Overview\n\nThis workflow lets create new tasks in Notion **using your voice**. It also includes some advanced features:\n\n* You can create multiple tasks in a single voice prompt\n* Relative due dates are supported (e.g. \"by *next Friday*\")\n* You can mention assignees and projects, which the workflow will attempt to intelligently match to existing Notion users and projects\n\n**Note**: The request body from your mobile shortcut - shown in steps.trigger.event.body above - is sent to OpenAI so ChatGPT can parse it. This is what powers the workflow. No other data is sent to OpenAI.\n\n**Need help with this workflow? [Check out the full instructions and FAQ here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/)**\n\n## Compatibility\n\nThis workflow will work with any Notion database.\n\n### Looking for a template to use?\n\nFor general productivity use, you\'ll love [Ultimate Brain](https://thomasjfrank.com/brain/) - my all-in-one second brain template for Notion. \n\nUltimate Brain brings tasks, notes, projects, and goals all into one tool. Naturally, it works very well with this workflow.\n\n**Are you a creator?** My [Creator\'s Companion](https://thomasjfrank.com/creators-companion/) template includes a ton of features that will help you make better-performing content and optimize your production process. There\'s even a version that includes Ultimate Brain, so you can easily use this workflow to create tasks related to your content.\n\n## Instructions\n\nBelow you\'ll find brief instructions. [Click here for the full instructions](https://thomasjfrank.com/notion-chatgpt-voice-tasks/), which include screenshots and a video tutorial.\n\n### Trigger Step\n\n* In the **trigger** step above, hit **Save and Continue**, leaving the default settings in place.\n* Copy your unique URL from the **Select Event** section. You\'ll need to add this to your **mobile app workflow**, as it is the URL your app will send requests to.\n* Send a test request via your mobile app (instructions below).\n* Select the test event when it appears. Then click **Continue**\n\n### Mobile App Setup\n\nYou can create voice tasks with this workflow on iOS, MacOS, and Android.\n\n* For MacOS and iOS (iPhone, iPad), we\'ll use the **Shortcuts** app. [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#ios)\n* For Android, we\'ll use the **Tasker** app ($3.49 USD, one-time). [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#android) *At this time, I know of no free app for Android that can handle this workflow.*\n\nOnce you\'ve set up the workflow on your phone, run it once to send a Test Event to this Pipedream workflow.\n\n*Technically, you can also create tasks via any tool that will let you make an HTTP request with a JSON body. [See the full blog post for instructions on this.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#http-generic)*\n\n### This Step\n\n* Enter your OpenAI API key. If you don\'t have one, [create one here.](https://platform.openai.com/account/api-keys) If you don\'t have an OpenAI account, create one first and enter billing details.\n* * *This workflow typically costs $0.003 per run for me. Creating multiple tasks does not increase cost much, as most of the token use per-run comes from the hidden system instructions.*\n* Follow the instructions in the other required properties. More properties may pop in dynamically based on what you choose.\n* Note the *Optional Fields* below. These aren\'t required, but you can use them to add more detail to your tasks, switch ChatGPT models, etc.\n* **Test** your workflow to make sure it works.\n* Hit **Deploy** to make your workflow live.\n\n## More Resources\n\n**More automations you may find useful:**\n\n* [Send Voice Note Transcriptions and Summaries to Notion](https://thomasjfrank.com/how-to-transcribe-audio-to-text-with-chatgpt-and-notion/)\n* [Notion to Google Calendar Sync](https://thomasjfrank.com/notion-google-calendar-sync/)\n\n**All My Notion Automations:**\n\n* [Notion Automations Hub](https://thomasjfrank.com/notion-automations/)\n\n**Want to get notified about updates to this workflow (and about new Notion templates, automations, and tutorials)?**\n\n* [Join my Notion Tips newsletter](https://thomasjfrank.com/fundamentals/#get-the-newsletter)\n`,
+			description: `**Need help with this workflow? Check out the documentation here: https://thomasjfrank.com**\n\nMore automations you may find useful:\n* [Send Voice Note Transcriptions and Summaries to Notion](https://thomasjfrank.com/how-to-transcribe-audio-to-text-with-chatgpt-and-notion/)`,
 		},
 		secretKey: {
 			type: "string",
 			label: "Secret Key",
 			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your shortcut is "welcometocostco", set "welcometocostco" here.`,
+			reloadProps: true,
 		},
 		notion: {
 			type: "app",
@@ -311,13 +299,6 @@ export default defineComponent({
 				}
 			},
 			reloadProps: true,
-		},
-		send_response: {
-			type: "boolean",
-			label: "Send Response?",
-			description: `Set this to **true** if you would like to receive a response on your device when this workflow successfully completes.\n\nThe response will tell you:\n* How many tasks were created\n* How long the operation took\n* How much the operation cost\n\n**Note:** In the case of an error, this workflow will send you an email with both the task details you spoke into your phone and the error details.\n\nFor certain errors, a fallback routine will send a single task to Notion containing everything you said as well.\n\nFor this reason, you can set this to **false** if you would like to avoid receiving a response on your device, which will help the workflow feel faster to use (especially since ChatGPT can often take 20-30 seconds to fully process all operations).`,
-			default: false,
-			optional: true,
 		},
 	},
 	async additionalProps() {
@@ -473,7 +454,7 @@ export default defineComponent({
 					priorityFlag
 						? requiredString
 						: ". Typically only used by Ultimate Tasks/Ultimate Brain users."
-				}\n\nIf you don't see the Priority Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
+				}`,
 				options: selectProps
 					.concat(statusProps)
 					.map((prop) => ({ label: prop, value: prop })),
@@ -487,7 +468,7 @@ export default defineComponent({
 					kanbanFlag
 						? requiredString
 						: ". Typically only used by Ultimate Tasks/Ultimate Brain users."
-				}\n\nIf you don't see the Priority Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
+				}`,
 				options: selectProps
 					.concat(statusProps)
 					.map((prop) => ({ label: prop, value: prop })),
@@ -704,10 +685,7 @@ export default defineComponent({
 		return props;
 	},
 	methods: {
-		/* ChatGPT-specific methods */
 		async chatGTPHandler(steps) {
-			/* This method handles all ChatGPT operations, calling other methods as needed. */
-			
 			// Start the workflow timer
 			const startDate = new Date(steps.trigger.context.ts);
 			const startTimestamp = startDate.getTime();
@@ -749,13 +727,13 @@ export default defineComponent({
 				);
 
 				// Get the cost of the operation
-				const gpt4Cost = await this.calculateGPTCost(
+				const gpt4Cost = this.calculateGPTCost(
 					gpt4Response.data.usage,
 					gpt4Response.data.model
 				);
 
 				// Validate the response from GPT-4
-				const validatedResponse = await this.validateChatGPTResponse(
+				const validatedResponse = this.validateChatGPTResponse(
 					gpt4Response.data.choices[0].message.content
 				);
 
@@ -789,13 +767,13 @@ export default defineComponent({
 				);
 
 				// Get the cost of Round 1
-				const roundOneCost = await this.calculateGPTCost(
+				const roundOneCost = this.calculateGPTCost(
 					roundOneResponse.data.usage,
 					roundOneResponse.data.model
 				);
 
 				// Validate the response from ChatGPT (Round 1)
-				const validatedResponseOne = await this.validateChatGPTResponse(
+				const validatedResponseOne = this.validateChatGPTResponse(
 					roundOneResponse.data.choices[0].message.content
 				);
 
@@ -812,13 +790,13 @@ export default defineComponent({
 				);
 
 				// Get the cost of Round 2
-				const roundTwoCost = await this.calculateGPTCost(
+				const roundTwoCost = this.calculateGPTCost(
 					roundTwoResponse.data.usage,
 					roundTwoResponse.data.model
 				);
 
 				// Validate the response from ChatGPT (Round 2)
-				const validatedResponseTwo = await this.validateChatGPTResponse(
+				const validatedResponseTwo = this.validateChatGPTResponse(
 					roundTwoResponse.data.choices[0].message.content
 				);
 
@@ -837,13 +815,13 @@ export default defineComponent({
 				);
 
 				// Get the cost of Round 2
-				const roundThreeCost = await this.calculateGPTCost(
+				const roundThreeCost = this.calculateGPTCost(
 					roundThreeResponse.data.usage,
 					roundThreeResponse.data.model
 				);
 
 				// Validate the response from ChatGPT (Round 2)
-				const validatedResponseThree = await this.validateChatGPTResponse(
+				const validatedResponseThree = this.validateChatGPTResponse(
 					roundThreeResponse.data.choices[0].message.content
 				);
 
@@ -979,77 +957,71 @@ export default defineComponent({
 			// Check the number of tokens in the task
 			const tokens = encode(rounds[roundNum]);
 			if (tokens.length > maxTokens) {
-				const error = new Error(`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`);
-				await this.createFallbackTask(error)
+				throw new Error(
+					`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`
+				);
 			}
 
 			// Send the task prompt and system message to OpenAI
-			try {
-				return retry(
-					async (bail, number) => {
-						console.log(`Attempt number ${number} to send prompt to OpenAI.`);
-						try {
-							const response = await openai.createChatCompletion({
-								model: config.model,
-								messages: [
-									{ role: "system", content: systemMessage },
-									{
-										role: "user",
-										content: rounds[roundNum],
-									},
-								],
-								temperature: 0,
-							});
-	
-							// Return the response
-							return response;
-						} catch (error) {
-							console.error(`An error occurred: ${error.message}`);
-							if (error.response) {
-								console.error(`Response status: ${error.response.status}`);
-								console.error(
-									`Response data: ${JSON.stringify(error.response.data)}`
-								);
-							}
-	
-							// If it's not a 5xx error, don't retry
-							if (
-								!error.response ||
-								error.response.status < 500 ||
-								error.response.status >= 600
-							) {
-								bail(error);
-							}
-	
-							// If it's a 5xx error, throw it again to trigger a retry
-							throw error;
+			return retry(
+				async (bail, number) => {
+					console.log(`Attempt number ${number} to send prompt to OpenAI.`);
+					try {
+						const response = await openai.createChatCompletion({
+							model: config.model,
+							messages: [
+								{ role: "system", content: systemMessage },
+								{
+									role: "user",
+									content: rounds[roundNum],
+								},
+							],
+							temperature: 0,
+						});
+
+						// Return the response
+						return response;
+					} catch (error) {
+						console.error(`An error occurred: ${error.message}`);
+						if (error.response) {
+							console.error(`Response status: ${error.response.status}`);
+							console.error(
+								`Response data: ${JSON.stringify(error.response.data)}`
+							);
 						}
-					},
-					{
-						retries: 2,
-						minTimeout: 1000,
-						factor: 2,
+
+						// If it's not a 5xx error, don't retry
+						if (
+							!error.response ||
+							error.response.status < 500 ||
+							error.response.status >= 600
+						) {
+							bail(error);
+						}
+
+						// If it's a 5xx error, throw it again to trigger a retry
+						throw error;
 					}
-				);
-			} catch (err) {
-				const error = new Error(`Error sending prompt to OpenAI: ${err}`);
-				await this.createFallbackTask(error)
-			}
+				},
+				{
+					retries: 2,
+					minTimeout: 1000,
+					factor: 2,
+				}
+			);
 		},
-		async calculateGPTCost(usage, model) {
+		calculateGPTCost(usage, model) {
 			if (
 				!usage ||
 				typeof usage !== "object" ||
 				!usage.prompt_tokens ||
 				!usage.completion_tokens
 			) {
-				const error = new Error("Invalid usage object (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error)
+				throw new Error("Invalid usage object");
 			}
 
 			if (!model || typeof model !== "string") {
-				const error = new Error("Invalid model string (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error)
+				throw new Error("Invalid model string");
 			}
 
 			const rates = {
@@ -1080,8 +1052,7 @@ export default defineComponent({
 				: "gpt-3.5-turbo";
 
 			if (!rates[chatModel]) {
-				const error = new Error("Non-supported model. (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error)
+				throw new Error("Non-supported model.");
 			}
 
 			const costs = {
@@ -1095,7 +1066,7 @@ export default defineComponent({
 
 			return costs.total;
 		},
-		async validateChatGPTResponse(response) {
+		validateChatGPTResponse(response) {
 			const responseArrayString = response;
 
 			// Check if the response if valid JSON
@@ -1107,12 +1078,11 @@ export default defineComponent({
 				// If the response is not valid JSON, attempt to repair it
 				try {
 					console.log("Attempting JSON repair...");
-					const repairedJSON = await this.repairJSON(responseArrayString);
+					const repairedJSON = this.repairJSON(responseArrayString);
 					responseArray = JSON.parse(repairedJSON);
 				} catch {
 					// If the response is not valid JSON after repair, throw an error
-					const error = new Error("Invalid JSON response from ChatGPT.")
-					await this.createFallbackTask(error)
+					throw new Error("Invalid JSON response from ChatGPT.");
 				}
 			}
 
@@ -1122,7 +1092,7 @@ export default defineComponent({
 			console.log(responseArray);
 			return responseArray;
 		},
-		async repairJSON(input) {
+		repairJSON(input) {
 			/** Strip non-JSON text from the response, then run jsonrepair.
 			 * Typically, not needed since ChatGPT has always returned valid JSON since
 			 * I added an example to the system instructions, but I'm including
@@ -1141,22 +1111,16 @@ export default defineComponent({
 
 			// If no JSON object or array is found, throw an error
 			if (beginningIndex == Infinity || endingIndex == -1) {
-				const error = new Error("No JSON object or array found (in repairJSON).")
-				await this.createFallbackTask(error)
+				throw new Error("No JSON object or array found.");
 			}
 
-			try {
-				// Extract the JSON string from any non-JSON text sandwiching it, then run it through jsonrepair to fix any errors
-				const JSONString = jsonrepair(
-					input.substring(beginningIndex, endingIndex + 1)
-				);
+			// Extract the JSON string from any non-JSON text sandwiching it, then run it through jsonrepair to fix any errors
+			const JSONString = jsonrepair(
+				input.substring(beginningIndex, endingIndex + 1)
+			);
 
-				// Return the repaired JSON string
-				return JSONString;
-			} catch (error) {
-				const jsonRepairError = new Error(`JSON repair error: ${error}`)
-				await this.createFallbackTask(jsonRepairError)
-			}
+			// Return the repaired JSON string
+			return JSONString;
 		},
 		refineTasks(tasks) {
 			console.log("Refining final response...");
@@ -1230,68 +1194,62 @@ export default defineComponent({
 		},
 		async moderationCheck(message, configuration) {
 			if (!message) {
-				const error = new Error("Message cannot be empty or null.");
-				await this.createFallbackTask(error)
+				throw new Error("Message cannot be empty or null.");
 			}
 
 			// Initialize the openai object
 			const openai = new OpenAIApi(configuration);
 
-			try {
-				return retry(
-					async (bail, number) => {
-						console.log(`Moderation attempt number: ${number}`);
-						try {
-							const response = await openai.createModeration({
-								input: message,
-							});
-	
-							const flagged = response.data.results[0].flagged;
-	
-							if (flagged === undefined || flagged === null) {
-								const error = new Error("Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed.");
-								await this.createFallbackTask(error)
-							}
-	
-							if (flagged === true) {
-								const error = new Error("Detected inappropriate content in the prompt.");
-								await this.createFallbackTask(error)
-							} else {
-								console.log("Prompt passed moderation check.");
-							}
-						} catch (error) {
-							console.error(`An error occurred: ${error.message}`);
-							if (error.response) {
-								console.error(`Response status: ${error.response.status}`);
-								console.error(
-									`Response data: ${JSON.stringify(error.response.data)}`
-								);
-							}
-	
-							if (
-								!error.response ||
-								error.response.status < 500 ||
-								error.response.status >= 600
-							) {
-								bail(error);
-							}
-	
-							throw error;
+			return retry(
+				async (bail, number) => {
+					console.log(`Moderation attempt number: ${number}`);
+					try {
+						const response = await openai.createModeration({
+							input: message,
+						});
+
+						const flagged = response.data.results[0].flagged;
+
+						if (flagged === undefined || flagged === null) {
+							throw new Error(
+								"Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed."
+							);
 						}
-					},
-					{
-						retries: 2,
-						minTimeout: 1000,
-						factor: 2,
+
+						if (flagged === true) {
+							console.log("Detected inappropriate content in the prompt.");
+							return $.flow.exit();
+						} else {
+							console.log("Prompt passed moderation check.");
+						}
+					} catch (error) {
+						console.error(`An error occurred: ${error.message}`);
+						if (error.response) {
+							console.error(`Response status: ${error.response.status}`);
+							console.error(
+								`Response data: ${JSON.stringify(error.response.data)}`
+							);
+						}
+
+						if (
+							!error.response ||
+							error.response.status < 500 ||
+							error.response.status >= 600
+						) {
+							bail(error);
+						}
+
+						throw error;
 					}
-				);
-			} catch (err) {
-				const error = new Error(`Error sending moderation check to OpenAI: ${err}`);
-				await this.createFallbackTask(error)
-			}
+				},
+				{
+					retries: 2,
+					minTimeout: 1000,
+					factor: 2,
+				}
+			);
 		},
-		/* Start of Notion-specific methods */
-		setPropChoices() {
+		setPropChoices(date) {
 			// Add user property and value choices to the config
 			config.properties = {
 				tasks_name: this.taskName,
@@ -1330,6 +1288,9 @@ export default defineComponent({
 				}),
 			};
 
+			// Pass the current date with timezone (from the user's device) to the configs
+			config.current_date = date;
+
 			// Construct an object to hold filter values
 			if (
 				this.database_filter_status_value ||
@@ -1364,8 +1325,7 @@ export default defineComponent({
 		},
 		async getClosestNotionMatch(inputJSON, notion) {
 			if (typeof inputJSON !== "object" || inputJSON === null) {
-				const error = new Error("Invalid JSON input.")
-				await this.sendErrorMessages(error)
+				throw new Error("Invalid JSON input.");
 			}
 
 			const taskArray = [];
@@ -1430,9 +1390,9 @@ export default defineComponent({
 						id: result.id,
 					};
 					choiceArray.push(choiceObj);
-				} catch (err) {
-					const error = new Error(`Error creating item in choice array. This error occured when trying to find a match in Notion for ${val}.\n\nFull error details:\n\n${err}`);
-					await this.sendErrorMessages(error, false)
+				} catch (e) {
+					console.log(e instanceof TypeError); // true
+					console.log(e.message); // "null has no properties"
 				}
 			}
 
@@ -1476,71 +1436,66 @@ export default defineComponent({
 
 			// Query the Notion API until hasMore == false. Add all results to the rows array
 			while (hasMore == undefined || hasMore == true) {
-				try {
-					await retry(
-						async (bail) => {
-							let resp;
-	
-							let params = {
-								page_size: 100,
-								start_cursor: token,
-							};
-	
-							try {
-								if (type === "assignee") {
-									resp = await limiter.schedule(() => notion.users.list(params));
-									rows.push(resp.results);
-								} else {
-									params = {
-										...params,
-										database_id: config.notion_dbs[type].id,
-										filter_properties: ["title"],
-										...(config.filters &&
-											Object.keys(config.filters).length >= 1 && {
-												filter: this.getFilters(),
-											}),
-									};
-									resp = await limiter.schedule(() =>
-										notion.databases.query(params)
-									);
-									rows.push(resp.results);
-								}
-	
-								hasMore = resp.has_more;
-								if (resp.next_cursor) {
-									token = resp.next_cursor;
-								}
-							} catch (error) {
-								if (400 <= error.status && error.status <= 409) {
-									// Don't retry for errors 400-409
-									bail(error);
-									return;
-								}
-	
-								if (
-									error.status === 500 ||
-									error.status === 503 ||
-									error.status === 504
-								) {
-									// Retry on 500, 503, and 504
-									throw error;
-								}
-	
-								// Don't retry for other errors
-								bail(error);
+				await retry(
+					async (bail) => {
+						let resp;
+
+						let params = {
+							page_size: 100,
+							start_cursor: token,
+						};
+
+						try {
+							if (type === "assignee") {
+								resp = await limiter.schedule(() => notion.users.list(params));
+								rows.push(resp.results);
+							} else {
+								params = {
+									...params,
+									database_id: config.notion_dbs[type].id,
+									filter_properties: ["title"],
+									...(config.filters &&
+										Object.keys(config.filters).length >= 1 && {
+											filter: this.getFilters(),
+										}),
+								};
+								resp = await limiter.schedule(() =>
+									notion.databases.query(params)
+								);
+								rows.push(resp.results);
 							}
-						},
-						{
-							retries: 2,
-							onRetry: (error, attempt) => {
-								console.log(`Attempt ${attempt} failed. Retrying...`);
-							},
+
+							hasMore = resp.has_more;
+							if (resp.next_cursor) {
+								token = resp.next_cursor;
+							}
+						} catch (error) {
+							if (400 <= error.status && error.status <= 409) {
+								// Don't retry for errors 400-409
+								bail(error);
+								return;
+							}
+
+							if (
+								error.status === 500 ||
+								error.status === 503 ||
+								error.status === 504
+							) {
+								// Retry on 500, 503, and 504
+								throw error;
+							}
+
+							// Don't retry for other errors
+							bail(error);
 						}
-					);
-				} catch (err) {
-					const error = new Error(`Error querying Notion to fetch ${type}. Creating fallback task.\n\nFull error details:\n\n${err}`);
-					await this.createFallbackTask(error)
-				}
+					},
+					{
+						retries: 2,
+						onRetry: (error, attempt) => {
+							console.log(`Attempt ${attempt} failed. Retrying...`);
+						},
+					}
+				);
 			}
 
 			return rows;
@@ -1588,7 +1543,7 @@ export default defineComponent({
 			// Add a recency filter if the user selected one
 			if (config.filters.date.value) {
 				// Construct the date object
-				const originalDate = new Date(config.original_body.date);
+				const originalDate = new Date(config.current_date);
 				const adjustedDate = new Date(
 					originalDate.getTime() -
 						config.filters.date.value * 24 * 60 * 60 * 1000
@@ -1645,6 +1600,60 @@ export default defineComponent({
 			}
 
 			return filter;
+		},
+		async createFallbackTask(error) {
+			/** This method creates a "fallback" task in Notion with all the task details
+			 *  spoken by the user. It is called if something fails in the ChatGPT steps, 
+			 * 	ensuring that the user's task is still captured in Notion.
+			 */
+
+			const $ = config.pipedream
+			
+			// Log the error
+			console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion...");
+
+			// Create the task object
+			const task = {
+				task: `[CHATGPT FAILED TO PARSE]: ${config.original_body.task}`,
+				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
+			}
+
+			// Create a Notion connection
+			const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
+
+			// Create the Notion-compliant task object
+			console.log("Creating a Notion-compliant task object...")
+			const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
+
+			// Place the task object into an array
+			const taskArray = [notionObject];
+
+			// Send the task to Notion
+			console.log("Sending the task to Notion...");
+			const response = await this.createTasks(taskArray, notion);
+
+			const taskID = response[0].id;
+			const taskURL = `https://notion.so/${taskID.replace(/-/g, "")}`;
+
+			// Send an email to the user
+			console.log("Sending an email to the user with error details...");
+			$.send.email({
+				subject: "[Notion Voice Tasks] – ChatGPT Error",
+				text: `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${taskURL}.\n\nThe full error message is:\n\n${error}`,
+			})
+
+			// Send the response to the user
+			console.log("Sending an HTTP response to the user...");
+			await $.respond({
+				status: 200,
+				headers: {},
+				body: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`,
+			});
+
+			// End the workflow
+			console.log("Ending the workflow and throwing an error...");
+			throw new Error(error)
+
 		},
 		formatChatResponse(resultsArray, cost, source) {
 			// To do: Make sure this works, call it from run()
@@ -1831,6 +1840,14 @@ export default defineComponent({
 										// Don't retry for errors 400-409
 										console.log("Error creating Notion task:", error);
 										bail(error);
+									} else if (
+										error.status === 500 ||
+										error.status === 503 ||
+										error.status === 504
+									) {
+										// Retry for 500, 503, and 504 errors
+										console.log("Error creating Notion task:", error);
+										throw error;
 									} else {
 										console.log("Error creating Notion task:", error);
 										throw error;
@@ -1847,9 +1864,8 @@ export default defineComponent({
 				);
 
 				return results;
-			} catch (err) {
-				const error = new Error(`Error creating task in Notion: ${err}`);
-				await this.sendErrorMessages(error);
+			} catch (error) {
+				console.log("Error creating task in Notion: ", error);
 			}
 		},
 		async sendResponse($, taskNum, startTime, cost) {
@@ -1870,122 +1886,13 @@ export default defineComponent({
 				Operation took ${duration} seconds and cost $${costString} to complete.`,
 			});
 		},
-		/* Fallback and Error-Handling Methods */
-		async checkBody() {
-			// Check that the body has all required properties
-			const requiredProps = ["task", "name", "date", "secret"];
-
-			for (let prop of requiredProps) {
-				if (!config.original_body[prop]) {
-					const error = new Error(
-						`Missing property "${prop}" in request body.`
-					);
-					await this.createFallbackTask(error)
-				}
-			}
-		},
-		async createFallbackTask(error) {
-			/** This method creates a "fallback" task in Notion with all the task details
-			 *  spoken by the user. It is called if something fails in the ChatGPT steps, 
-			 * 	ensuring that the user's task is still captured in Notion.
-			 */
-
-			const $ = config.pipedream
-			
-			// Log the error
-			console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion...");
-
-			// Create the task object
-			const task = {
-				task: `[CHATGPT FAILED TO PARSE]: ${config.original_body.task}`,
-				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
-			}
-
-			// Create a Notion connection
-			const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
-
-			// Create the Notion-compliant task object
-			console.log("Creating a Notion-compliant task object...")
-			const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
-
-			// Place the task object into an array
-			const taskArray = [notionObject];
-
-			// Send the task to Notion
-			console.log("Sending the task to Notion...");
-			const response = await this.createTasks(taskArray, notion);
-
-			const taskID = response[0].id;
-			const taskURL = `https://notion.so/${taskID.replace(/-/g, "")}`;
-
-			// Send an email to the user
-			console.log("Sending an email to the user with error details...");
-			$.send.email({
-				subject: "[Notion Voice Tasks] – ChatGPT Error",
-				text: `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${taskURL}.\n\nThe full error message is:\n\n${error}`,
-			})
-
-			// Send the response to the user
-			console.log("Sending an HTTP response to the user...");
-			await $.respond({
-				status: 200,
-				headers: {},
-				body: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`,
-			});
-
-			// End the workflow
-			console.log("Ending the workflow and throwing an error...");
-			throw new Error(error)
-
-		},
-		async sendErrorMessages(error, terminate = true) {
-			/** 
-			 * This fallback method is called if something fails in the Notion steps, meaning
-			 * the script is unable to send anything to Notion. In these instances, this method
-			 * sends an email to the Pipedream account email with all task and error details, and 
-			 * sends an error message to the user via HTTP response.
-			 */
-
-			const $ = config.pipedream
-			
-			// Log the error
-			console.log("Failed to create the task(s) in Notion. Sending an email to the user with error details...");
-
-			// Create the task object
-			const task = {
-				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
-			}
-
-			// Send an email to the user
-			console.log("Sending an email to the user with error details...");
-			$.send.email({
-				subject: "[Notion Voice Tasks] – Notion Error",
-				text: `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`,
-			})
-
-			// Send the response to the user
-			console.log("Sending an HTTP response to the user...");
-			await $.respond({
-				status: 200,
-				headers: {},
-				body: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`,
-			});
-
-			// End the workflow
-			if (terminate === true) {
-				console.log("Ending the workflow and throwing an error...");
-				throw new Error(error)
-			} else {
-				console.error("Non-workflow-ending error:", error)
-			}
-		},
 	},
 	async run({ steps, $ }) {
+		// Grab the current datetime string from the trigger
+		const current_date = steps.trigger.event.body.date;
+
 		// Add the original body to the config (used as a fallback if ChatGPT fails)
 		config.original_body = steps.trigger.event.body;
-		
-		// Check the request body for all required properties
-		await this.checkBody();
 
 		// Add the pipedream object to the config
 		config.pipedream = $;
@@ -1993,45 +1900,12 @@ export default defineComponent({
 		// Initialize the Notion SDK
 		const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
 
-		// Fetch the Tasks database
-		let database
-		try {
-			database = await retry((bail) => {
-				try {
-					const response = notion.databases.retrieve({
-						database_id: this.databaseID,
-					});
+		// Fetch the Tasks database properties
+		const database = await notion.databases.retrieve({
+			database_id: this.databaseID,
+		});
 
-					return response;
-				} catch (error) {
-					if (400 <= error.status && error.status <= 409) {
-						// Don't retry for errors 400-409
-						bail(error);
-					} else {
-						throw error;
-					}
-				}
-			},
-			{
-				retries: 2,
-			})
-		} catch (err) {
-			const error = new Error(`Error retrieving Notion Tasks database: ${err}`);
-			await this.sendErrorMessages(error)
-		}
-
-		// Get the Tasks database properties
-		let properties
-		try {
-			if (database.hasOwnProperty("properties")) {
-				properties = database.properties;
-			} else {
-				throw new Error("Database properties not found.")
-			}
-		} catch (err) {
-			const error = new Error(`Error retrieving Notion Tasks database properties: ${err}`);
-			await this.sendErrorMessages(error)
-		}
+		const properties = database.properties;
 
 		// Update the config with the Tasks database ID and properties
 		config.notion_dbs.tasks.id = this.databaseID;
@@ -2039,48 +1913,18 @@ export default defineComponent({
 
 		// Update the config with Project database properties if the project database is set
 		if (this.project) {
-			let projectsDatabase
-			try {
-				projectsDatabase = await retry((bail) => {
-					try {
-						const response = notion.databases.retrieve({
-							database_id: properties[this.project].relation.database_id,
-						});
-
-						return response;
-					} catch (error) {
-						if (400 <= error.status && error.status <= 409) {
-							// Don't retry for errors 400-409
-							bail(error);
-						} else {
-							throw error;
-						}
-					}
-				},
-				{
-					retries: 2,
-				})
-			} catch (err) {
-				const error = new Error(`Error retrieving Notion Projects database. Attempting to create tasks without Project assignments. Error details: ${err}`);
-				await this.sendErrorMessages(error, false)
-			}
+			const projectsDatabase = await notion.databases.retrieve({
+				database_id: properties[this.project].relation.database_id,
+			});
 
 			// Add the Project DB's ID and properties to the config object
-			try {
-				config.notion_dbs.projects.id = properties[this.project].relation.database_id;
-				if (projectsDatabase.hasOwnProperty("properties")) {
-					config.notion_dbs.projects.properties = projectsDatabase.properties;
-				} else {
-					throw new Error("Project database properties not found.")
-				}
-			} catch (err) {
-				const error = new Error(`Error retrieving Notion Projects database properties. Attempting to create tasks without Project assignments. Error details: ${err}`);
-				await this.sendErrorMessages(error, false)
-			}
+			config.notion_dbs.projects.id =
+				properties[this.project].relation.database_id;
+			config.notion_dbs.projects.properties = projectsDatabase.properties;
 		}
 
 		// Set all the user's prop choices in the config
-		this.setPropChoices();
+		this.setPropChoices(current_date);
 		console.log("Config settings:");
 		console.log(JSON.stringify(config, null, 2));
 
@@ -2124,14 +1968,12 @@ export default defineComponent({
 		console.log(notionResponse);
 
 		// Sent the response to the user
-		if (this.send_response === true) {
-			await this.sendResponse(
-				$,
-				notionResponse.length,
-				chatGPT_results.start_timestamp,
-				chatGPT_results.cost
-			);
-		}
+		await this.sendResponse(
+			$,
+			notionResponse.length,
+			chatGPT_results.start_timestamp,
+			chatGPT_results.cost
+		);
 
 		return notionResponse;
 	},
