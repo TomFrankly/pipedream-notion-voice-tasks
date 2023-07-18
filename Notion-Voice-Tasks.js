@@ -727,7 +727,7 @@ export default defineComponent({
 				);
 
 				// Get the cost of the operation
-				const gpt4Cost = this.calculateGPTCost(
+				const gpt4Cost = await this.calculateGPTCost(
 					gpt4Response.data.usage,
 					gpt4Response.data.model
 				);
@@ -767,7 +767,7 @@ export default defineComponent({
 				);
 
 				// Get the cost of Round 1
-				const roundOneCost = this.calculateGPTCost(
+				const roundOneCost = await this.calculateGPTCost(
 					roundOneResponse.data.usage,
 					roundOneResponse.data.model
 				);
@@ -790,7 +790,7 @@ export default defineComponent({
 				);
 
 				// Get the cost of Round 2
-				const roundTwoCost = this.calculateGPTCost(
+				const roundTwoCost = await this.calculateGPTCost(
 					roundTwoResponse.data.usage,
 					roundTwoResponse.data.model
 				);
@@ -815,7 +815,7 @@ export default defineComponent({
 				);
 
 				// Get the cost of Round 2
-				const roundThreeCost = this.calculateGPTCost(
+				const roundThreeCost = await this.calculateGPTCost(
 					roundThreeResponse.data.usage,
 					roundThreeResponse.data.model
 				);
@@ -957,71 +957,77 @@ export default defineComponent({
 			// Check the number of tokens in the task
 			const tokens = encode(rounds[roundNum]);
 			if (tokens.length > maxTokens) {
-				throw new Error(
-					`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`
-				);
+				const error = new Error(`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`);
+				await this.createFallbackTask(error)
 			}
 
 			// Send the task prompt and system message to OpenAI
-			return retry(
-				async (bail, number) => {
-					console.log(`Attempt number ${number} to send prompt to OpenAI.`);
-					try {
-						const response = await openai.createChatCompletion({
-							model: config.model,
-							messages: [
-								{ role: "system", content: systemMessage },
-								{
-									role: "user",
-									content: rounds[roundNum],
-								},
-							],
-							temperature: 0,
-						});
-
-						// Return the response
-						return response;
-					} catch (error) {
-						console.error(`An error occurred: ${error.message}`);
-						if (error.response) {
-							console.error(`Response status: ${error.response.status}`);
-							console.error(
-								`Response data: ${JSON.stringify(error.response.data)}`
-							);
+			try {
+				return retry(
+					async (bail, number) => {
+						console.log(`Attempt number ${number} to send prompt to OpenAI.`);
+						try {
+							const response = await openai.createChatCompletion({
+								model: config.model,
+								messages: [
+									{ role: "system", content: systemMessage },
+									{
+										role: "user",
+										content: rounds[roundNum],
+									},
+								],
+								temperature: 0,
+							});
+	
+							// Return the response
+							return response;
+						} catch (error) {
+							console.error(`An error occurred: ${error.message}`);
+							if (error.response) {
+								console.error(`Response status: ${error.response.status}`);
+								console.error(
+									`Response data: ${JSON.stringify(error.response.data)}`
+								);
+							}
+	
+							// If it's not a 5xx error, don't retry
+							if (
+								!error.response ||
+								error.response.status < 500 ||
+								error.response.status >= 600
+							) {
+								bail(error);
+							}
+	
+							// If it's a 5xx error, throw it again to trigger a retry
+							throw error;
 						}
-
-						// If it's not a 5xx error, don't retry
-						if (
-							!error.response ||
-							error.response.status < 500 ||
-							error.response.status >= 600
-						) {
-							bail(error);
-						}
-
-						// If it's a 5xx error, throw it again to trigger a retry
-						throw error;
+					},
+					{
+						retries: 2,
+						minTimeout: 1000,
+						factor: 2,
 					}
-				},
-				{
-					retries: 2,
-					minTimeout: 1000,
-					factor: 2,
-				}
-			);
+				);
+			} catch (error) {
+				console.error(error)
+				await this.createFallbackTask(error)
+			}
 		},
-		calculateGPTCost(usage, model) {
+		async calculateGPTCost(usage, model) {
 			if (
 				!usage ||
 				typeof usage !== "object" ||
 				!usage.prompt_tokens ||
 				!usage.completion_tokens
 			) {
-				throw new Error("Invalid usage object");
+				const error = "Invalid usage object (thrown from calculateGPTCost)."
+				await this.createFallbackTask(error)
 			}
 
 			if (!model || typeof model !== "string") {
-				throw new Error("Invalid model string");
+				const error = "Invalid model string (thrown from calculateGPTCost)."
+				await this.createFallbackTask(error)
 			}
 
 			const rates = {
@@ -1052,7 +1058,8 @@ export default defineComponent({
 				: "gpt-3.5-turbo";
 
 			if (!rates[chatModel]) {
-				throw new Error("Non-supported model.");
+				const error = "Non-supported model. (thrown from calculateGPTCost)."
+				await this.createFallbackTask(error)
 			}
 
 			const costs = {
@@ -1201,54 +1208,58 @@ export default defineComponent({
 			// Initialize the openai object
 			const openai = new OpenAIApi(configuration);
 
-			return retry(
-				async (bail, number) => {
-					console.log(`Moderation attempt number: ${number}`);
-					try {
-						const response = await openai.createModeration({
-							input: message,
-						});
-
-						const flagged = response.data.results[0].flagged;
-
-						if (flagged === undefined || flagged === null) {
-							throw new Error(
-								"Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed."
-							);
+			try {
+				return retry(
+					async (bail, number) => {
+						console.log(`Moderation attempt number: ${number}`);
+						try {
+							const response = await openai.createModeration({
+								input: message,
+							});
+	
+							const flagged = response.data.results[0].flagged;
+	
+							if (flagged === undefined || flagged === null) {
+								const error = new Error("Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed.");
+								await this.createFallbackTask(error)
+							}
+	
+							if (flagged === true) {
+								const error = new Error("Detected inappropriate content in the prompt.");
+								await this.createFallbackTask(error)
+							} else {
+								console.log("Prompt passed moderation check.");
+							}
+						} catch (error) {
+							console.error(`An error occurred: ${error.message}`);
+							if (error.response) {
+								console.error(`Response status: ${error.response.status}`);
+								console.error(
+									`Response data: ${JSON.stringify(error.response.data)}`
+								);
+							}
+	
+							if (
+								!error.response ||
+								error.response.status < 500 ||
+								error.response.status >= 600
+							) {
+								bail(error);
+							}
+	
+							throw error;
 						}
-
-						if (flagged === true) {
-							console.log("Detected inappropriate content in the prompt.");
-							return $.flow.exit();
-						} else {
-							console.log("Prompt passed moderation check.");
-						}
-					} catch (error) {
-						console.error(`An error occurred: ${error.message}`);
-						if (error.response) {
-							console.error(`Response status: ${error.response.status}`);
-							console.error(
-								`Response data: ${JSON.stringify(error.response.data)}`
-							);
-						}
-
-						if (
-							!error.response ||
-							error.response.status < 500 ||
-							error.response.status >= 600
-						) {
-							bail(error);
-						}
-
-						throw error;
+					},
+					{
+						retries: 2,
+						minTimeout: 1000,
+						factor: 2,
 					}
-				},
-				{
-					retries: 2,
-					minTimeout: 1000,
-					factor: 2,
-				}
-			);
+				);
+			} catch (error) {
+				console.error(error);
+				await this.createFallbackTask(error)
+			}
 		},
 		setPropChoices(date) {
 			// Add user property and value choices to the config
@@ -1655,6 +1666,43 @@ export default defineComponent({
 			console.log("Ending the workflow and throwing an error...");
 			throw new Error(error)
 
+		},
+		async sendErrorMessages(error) {
+			/** 
+			 * This fallback method is called if something fails in the Notion steps, meaning
+			 * the script is unable to send anything to Notion. In these instances, this method
+			 * sends an email to the Pipedream account email with all task and error details, and 
+			 * sends an error message to the user via HTTP response.
+			 */
+
+			const $ = config.pipedream
+			
+			// Log the error
+			console.log("Failed to create the task(s) in Notion. Sending an email to the user with error details...");
+
+			// Create the task object
+			const task = {
+				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
+			}
+
+			// Send an email to the user
+			console.log("Sending an email to the user with error details...");
+			$.send.email({
+				subject: "[Notion Voice Tasks] – Notion Error",
+				text: `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`,
+			})
+
+			// Send the response to the user
+			console.log("Sending an HTTP response to the user...");
+			await $.respond({
+				status: 200,
+				headers: {},
+				body: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`,
+			});
+
+			// End the workflow
+			console.log("Ending the workflow and throwing an error...");
+			throw new Error(error)
 		},
 		formatChatResponse(resultsArray, cost, source) {
 			// To do: Make sure this works, call it from run()
