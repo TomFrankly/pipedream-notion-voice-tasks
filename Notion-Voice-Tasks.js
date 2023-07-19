@@ -1884,16 +1884,17 @@ export default defineComponent({
 				}
 			}
 		},
-		async createFallbackTask(error) {
-			/** This method creates a "fallback" task in Notion with all the task details
-			 *  spoken by the user. It is called if something fails in the ChatGPT steps, 
-			 * 	ensuring that the user's task is still captured in Notion.
-			 */
-
+		async createFallbackTask(error, terminate = true, source = "generic") {
 			const $ = config.pipedream
 			
 			// Log the error
-			console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion...");
+			if (source === "chatgpt") {
+				console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion...");
+			} else if (source === "notion") {
+				console.log("Failed to create the task(s) in Notion. Sending error email to user...");
+			} else {
+				console.log("An error occurred. Sending error email to user...");
+			}
 
 			// Create the task object
 			const task = {
@@ -1901,22 +1902,33 @@ export default defineComponent({
 				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
 			}
 
-			// Create a Notion connection
-			const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
+			const error_details = {
+				chatgpt: {
+					subject: `[Notion Voice Tasks] – ChatGPT Error`,
+					body() {
+						return `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${this.task_url}.\n\nThe full error message is:\n\n${error}`
+					}
+				}
+			}
 
-			// Create the Notion-compliant task object
-			console.log("Creating a Notion-compliant task object...")
-			const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
+			if (source === "Notion") {
+				// Create a Notion connection
+				const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
 
-			// Place the task object into an array
-			const taskArray = [notionObject];
+				// Create the Notion-compliant task object
+				console.log("Creating a Notion-compliant task object...")
+				const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
 
-			// Send the task to Notion
-			console.log("Sending the task to Notion...");
-			const response = await this.createTasks(taskArray, notion);
+				// Place the task object into an array
+				const taskArray = [notionObject];
 
-			const taskID = response[0].id;
-			const taskURL = `https://notion.so/${taskID.replace(/-/g, "")}`;
+				// Send the task to Notion
+				console.log("Sending the task to Notion...");
+				const response = await this.createTasks(taskArray, notion);
+
+				const taskID = response[0].id;
+				error_details.chatgpt.task_url = `https://notion.so/${taskID.replace(/-/g, "")}`;
+			}
 
 			// Send an email to the user
 			console.log("Sending an email to the user with error details...");
