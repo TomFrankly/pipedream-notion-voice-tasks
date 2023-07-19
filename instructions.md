@@ -6,8 +6,6 @@ This workflow lets create new tasks in Notion **using your voice**. It also incl
 * Relative due dates are supported (e.g. "by *next Friday*")
 * You can mention assignees and projects, which the workflow will attempt to intelligently match to existing Notion users and projects
 
-**Note**: The request body from your mobile shortcut – shown in `steps.trigger.event.body` above – is sent to OpenAI so ChatGPT can parse it. This is what powers the workflow. No other data is sent to OpenAI.
-
 **Need help with this workflow? [Check out the full instructions and FAQ here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/)**
 
 ## Compatibility
@@ -52,6 +50,10 @@ Once you've set up the workflow on your phone, run it once to send a Test Event 
 * Note the *Optional Fields* below. These aren't required, but you can use them to add more detail to your tasks, switch ChatGPT models, etc.
 * **Test** your workflow to make sure it works.
 * Hit **Deploy** to make your workflow live.
+
+## Privacy
+
+The request body from your mobile shortcut – shown in `steps.trigger.event.body` above – is sent to OpenAI so ChatGPT can parse it. This is what powers the workflow. No other data is sent to OpenAI. [More details are available in the full blog post.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)
 
 ## More Resources
 
