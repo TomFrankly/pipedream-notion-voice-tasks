@@ -677,14 +677,25 @@ export default defineComponent({
 			}),
 			...(this.openai && {
 				update_system: {
-					type: "boolean",
-					label: "Auto-Update System Message",
+					type: "string",
+					label: "System Message Source",
 					description:
-						"Set to **True** if you want the your workflow to fetch the latest versions of the system messages (instructions for ChatGPT).\n\nSystem messages tell the model how to behave and how to handle the user's prompt.\n\nThis setting allows for using updated system messages in the event that better ones are discovered or bugs are discovered in the hard-coded ones (without you having to recreate the entire workflow).\n\n[You can read the system messages here](https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/).\n\nIf this is set to **False**, or if the request to that URL fails/takes more than 2 seconds, the script will fall back to the system message that are hard-coded into this workflow. **Defaults to True.**\n\nSet this to **False** if you would like to make changes to the system messages yourself. From there, you can make changes to the hard-coded system messages starting on line 30 of the Code section. Make these changes at your own risk, and please copy the current code first so you have a backup.",
+						`Set to **Auto-Update** if you want the your workflow to fetch the latest versions of the system messages (instructions for ChatGPT) I've written.\n\nSystem messages tell the model how to behave and how to handle the user's prompt.\n\nThis setting allows for using updated system messages in the event that better ones are discovered or bugs are discovered in the hard-coded ones (without you having to recreate the entire workflow).\n\n[You can read the system messages here](https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/).\n\nIf this is set to **Hard-Coded**, or if the request to that URL fails/takes more than 2 seconds, the script will fall back to the system message that are hard-coded into this workflow.\n\nIf you would like to use your own system messages, select **Write Your Own (Advanced)** and then add your custom URL to the **System Message URL** property below. [Read the full instructions on this use case here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#custom-system)`,
+					options: ["Auto-Update", "Hard-Coded", "Write Your Own (Advanced)"],
 					optional: true,
-					default: true,
+					default: "Auto-Update",
+					reloadProps: true,
 				},
 			}),
+			...(this.update_system === "Write Your Own (Advanced)" && {
+				system_message_url: {
+					type: "string",
+					label: "System Message URL",
+					description: `The URL where your custom system messages are hosted.\n\n*Writing your own system messages is an advanced use case, is not recommended for most users, and will not be supported in any way. If you do write your own system messages, you should [copy mine](https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/) and make minor adjustments.The system messages must be a JSON object with a particular structure, and large changes will likely break this workflow.*`,
+					optional: true,
+					default: "https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/",
+				}
+			})
 		};
 
 		return props;
