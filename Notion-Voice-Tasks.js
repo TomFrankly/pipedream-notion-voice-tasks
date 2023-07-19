@@ -1,17 +1,3 @@
-/** 
- * To Do:
- * 
- * - Add support for attaching content projects in Creator's Companion
- * - - Create dynamic prop if Content relation is found
- * - - Figure out keyword ("Content Project"?)
- * - - Add to config, findMatch, etc
- * - Update instructions:
- * - - Anchor link for generic HTTP requests
- * - - Tasker and Shortcuts share links
- * - Refactor fallbacks into a single method with more args
- */
-
-// Import dependencies
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
@@ -879,7 +865,7 @@ export default defineComponent({
 			// Check the secret key to ensure the request came from the correct sender
 			if (!data.secret || data.secret !== this.secretKey) {
 				const error = new Error("Secret key in the request doesn't match the one set in the workflow settings.");
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			// Define the Joi schema for each property in the data
@@ -920,7 +906,7 @@ export default defineComponent({
 			const dateObject = validator.escape(data.date);
 			if (!dayjs(dateObject).isValid()) {
 				const error = new Error(`Invalid date format. Date object currently is formatted as: ${dateObject}. Please use ISO 8601 format.`);
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			// Construct the data object
@@ -938,7 +924,7 @@ export default defineComponent({
 			// If there is an error, return the error message
 			if (error) {
 				const joiError = new Error(`Joi error: ${error}`);
-				await this.createFallbackTask(joiError)
+				await this.createFallbackTask(joiError, true, "chatgpt")
 			}
 
 			// Log the value
@@ -980,7 +966,7 @@ export default defineComponent({
 			const tokens = encode(rounds[roundNum]);
 			if (tokens.length > maxTokens) {
 				const error = new Error(`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`);
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			// Send the task prompt and system message to OpenAI
@@ -1033,7 +1019,7 @@ export default defineComponent({
 				);
 			} catch (err) {
 				const error = new Error(`Error sending prompt to OpenAI: ${err}`);
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 		},
 		async calculateGPTCost(usage, model) {
@@ -1044,12 +1030,12 @@ export default defineComponent({
 				!usage.completion_tokens
 			) {
 				const error = new Error("Invalid usage object (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			if (!model || typeof model !== "string") {
 				const error = new Error("Invalid model string (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			const rates = {
@@ -1081,7 +1067,7 @@ export default defineComponent({
 
 			if (!rates[chatModel]) {
 				const error = new Error("Non-supported model. (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			const costs = {
@@ -1112,7 +1098,7 @@ export default defineComponent({
 				} catch {
 					// If the response is not valid JSON after repair, throw an error
 					const error = new Error("Invalid JSON response from ChatGPT.")
-					await this.createFallbackTask(error)
+					await this.createFallbackTask(error, true, "chatgpt")
 				}
 			}
 
@@ -1142,7 +1128,7 @@ export default defineComponent({
 			// If no JSON object or array is found, throw an error
 			if (beginningIndex == Infinity || endingIndex == -1) {
 				const error = new Error("No JSON object or array found (in repairJSON).")
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			try {
@@ -1155,7 +1141,7 @@ export default defineComponent({
 				return JSONString;
 			} catch (error) {
 				const jsonRepairError = new Error(`JSON repair error: ${error}`)
-				await this.createFallbackTask(jsonRepairError)
+				await this.createFallbackTask(jsonRepairError, true, "chatgpt")
 			}
 		},
 		refineTasks(tasks) {
@@ -1231,7 +1217,7 @@ export default defineComponent({
 		async moderationCheck(message, configuration) {
 			if (!message) {
 				const error = new Error("Message cannot be empty or null.");
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			// Initialize the openai object
@@ -1250,12 +1236,12 @@ export default defineComponent({
 	
 							if (flagged === undefined || flagged === null) {
 								const error = new Error("Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed.");
-								await this.createFallbackTask(error)
+								await this.createFallbackTask(error, true, "chatgpt")
 							}
 	
 							if (flagged === true) {
 								const error = new Error("Detected inappropriate content in the prompt.");
-								await this.createFallbackTask(error)
+								await this.createFallbackTask(error, true, "chatgpt")
 							} else {
 								console.log("Prompt passed moderation check.");
 							}
@@ -1287,7 +1273,7 @@ export default defineComponent({
 				);
 			} catch (err) {
 				const error = new Error(`Error sending moderation check to OpenAI: ${err}`);
-				await this.createFallbackTask(error)
+				await this.createFallbackTask(error, true, "chatgpt")
 			}
 		},
 		/* Start of Notion-specific methods */
@@ -1365,7 +1351,7 @@ export default defineComponent({
 		async getClosestNotionMatch(inputJSON, notion) {
 			if (typeof inputJSON !== "object" || inputJSON === null) {
 				const error = new Error("Invalid JSON input.")
-				await this.sendErrorMessages(error)
+				await this.createFallbackTask(error, true, "notion")
 			}
 
 			const taskArray = [];
@@ -1432,7 +1418,7 @@ export default defineComponent({
 					choiceArray.push(choiceObj);
 				} catch (err) {
 					const error = new Error(`Error creating item in choice array. This error occured when trying to find a match in Notion for ${val}.\n\nFull error details:\n\n${err}`);
-					await this.sendErrorMessages(error, false)
+					await this.createFallbackTask(error, false, "notion")
 				}
 			}
 
@@ -1849,7 +1835,7 @@ export default defineComponent({
 				return results;
 			} catch (err) {
 				const error = new Error(`Error creating task in Notion: ${err}`);
-				await this.sendErrorMessages(error);
+				await this.createFallbackTask(error, true, "notion")
 			}
 		},
 		async sendResponse($, taskNum, startTime, cost) {
@@ -1872,7 +1858,6 @@ export default defineComponent({
 		},
 		/* Fallback and Error-Handling Methods */
 		async checkBody() {
-			// Check that the body has all required properties
 			const requiredProps = ["task", "name", "date", "secret"];
 
 			for (let prop of requiredProps) {
@@ -1884,19 +1869,17 @@ export default defineComponent({
 				}
 			}
 		},
-		async createFallbackTask(error, terminate = true, source = "generic") {
+		async createFallbackTask(error, terminate = true, source = "notion") {
 			const $ = config.pipedream
 			
-			// Log the error
 			if (source === "chatgpt") {
-				console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion...");
+				console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion and emailing the user...");
 			} else if (source === "notion") {
 				console.log("Failed to create the task(s) in Notion. Sending error email to user...");
 			} else {
 				console.log("An error occurred. Sending error email to user...");
 			}
 
-			// Create the task object
 			const task = {
 				task: `[CHATGPT FAILED TO PARSE]: ${config.original_body.task}`,
 				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
@@ -1907,22 +1890,26 @@ export default defineComponent({
 					subject: `[Notion Voice Tasks] – ChatGPT Error`,
 					body() {
 						return `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${this.task_url}.\n\nThe full error message is:\n\n${error}`
-					}
+					},
+					http_response: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`
+				},
+				notion: {
+					subject: `[Notion Voice Tasks] – Notion Error`,
+					body() {
+						return `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`
+					},
+					http_response: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`
 				}
 			}
 
 			if (source === "Notion") {
-				// Create a Notion connection
 				const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
 
-				// Create the Notion-compliant task object
 				console.log("Creating a Notion-compliant task object...")
 				const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
 
-				// Place the task object into an array
 				const taskArray = [notionObject];
 
-				// Send the task to Notion
 				console.log("Sending the task to Notion...");
 				const response = await this.createTasks(taskArray, notion);
 
@@ -1930,66 +1917,26 @@ export default defineComponent({
 				error_details.chatgpt.task_url = `https://notion.so/${taskID.replace(/-/g, "")}`;
 			}
 
-			// Send an email to the user
 			console.log("Sending an email to the user with error details...");
 			$.send.email({
-				subject: "[Notion Voice Tasks] – ChatGPT Error",
-				text: `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${taskURL}.\n\nThe full error message is:\n\n${error}`,
+				subject: error_details[source].subject,
+				text: error_details[source].body(),
 			})
 
-			// Send the response to the user
 			console.log("Sending an HTTP response to the user...");
 			await $.respond({
 				status: 200,
 				headers: {},
-				body: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`,
+				body: error_details[source].http_response,
 			});
 
-			// End the workflow
-			console.log("Ending the workflow and throwing an error...");
-			throw new Error(error)
-
-		},
-		async sendErrorMessages(error, terminate = true) {
-			/** 
-			 * This fallback method is called if something fails in the Notion steps, meaning
-			 * the script is unable to send anything to Notion. In these instances, this method
-			 * sends an email to the Pipedream account email with all task and error details, and 
-			 * sends an error message to the user via HTTP response.
-			 */
-
-			const $ = config.pipedream
-			
-			// Log the error
-			console.log("Failed to create the task(s) in Notion. Sending an email to the user with error details...");
-
-			// Create the task object
-			const task = {
-				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
-			}
-
-			// Send an email to the user
-			console.log("Sending an email to the user with error details...");
-			$.send.email({
-				subject: "[Notion Voice Tasks] – Notion Error",
-				text: `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`,
-			})
-
-			// Send the response to the user
-			console.log("Sending an HTTP response to the user...");
-			await $.respond({
-				status: 200,
-				headers: {},
-				body: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`,
-			});
-
-			// End the workflow
 			if (terminate === true) {
 				console.log("Ending the workflow and throwing an error...");
 				throw new Error(error)
 			} else {
 				console.error("Non-workflow-ending error:", error)
 			}
+
 		},
 	},
 	async run({ steps, $ }) {
