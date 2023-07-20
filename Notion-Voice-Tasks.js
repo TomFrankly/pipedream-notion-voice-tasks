@@ -504,8 +504,8 @@ export default defineComponent({
 			...(this.openai && {
 				send_response: {
 					type: "boolean",
-					label: "Send Response?",
-					description: `Set this to **true** if you would like to receive a response on your device when this workflow successfully completes.\n\nThe response will tell you:\n* How many tasks were created\n* How long the operation took\n* How much the operation cost\n\n**Note:** In the case of an error, this workflow will send you an email with both the task details you spoke into your phone and the error details.\n\nFor certain errors, a fallback routine will send a single task to Notion containing everything you said as well.\n\nFor this reason, you can set this to **false** if you would like to avoid receiving a response on your device, which will help the workflow feel faster to use (especially since ChatGPT can often take 20-30 seconds to fully process all operations).`,
+					label: "Send Response on Completion?",
+					description: `Set this to **true** if you would like to receive a response on your device when this workflow successfully completes.\n\nThe response will tell you:\n* How many tasks were created\n* How long the operation took\n* How much the operation cost\n\n**Note:** In the case of an error, this workflow will send you an email with both the task details you spoke into your phone and the error details.\n\nFor certain errors, a fallback routine will send a single task to Notion containing everything you said as well.\n\nFor this reason, you can set this to **false** to simply send a generic response right away, which will help the workflow feel faster to use (especially since ChatGPT can often take 20-30 seconds to fully process all operations).`,
 					default: false,
 					optional: true,
 				},
