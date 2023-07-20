@@ -66,6 +66,10 @@ Including multiple tasks in a single voice prompt (i.e. single run) will not inc
 
 The request body from your mobile shortcut – shown in `steps.trigger.event.body` above – is sent to OpenAI so ChatGPT can parse it. This is what powers the workflow. No other data is sent to OpenAI. [More details are available in the full blog post.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)
 
+### Code
+
+The code that runs this workflow has been compressed for performance reasons. If you want, you can [view my uncompressed code on Github.](https://github.com/TomFrankly/pipedream-notion-voice-tasks/blob/main/Notion-Voice-Tasks.js)
+
 ## More Resources
 
 **More automations you may find useful:**
