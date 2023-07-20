@@ -44,14 +44,25 @@ Once you've set up the workflow on your phone, run it once to send a Test Event 
 
 ### This Step
 
-* Enter your OpenAI API key. If you don't have one, [create one here.](https://platform.openai.com/account/api-keys) If you don't have an OpenAI account, create one first and enter billing details.
-* * *This workflow typically costs $0.003 per run for me. Creating multiple tasks does not increase cost much, as most of the token use per-run comes from the hidden system instructions.*
+* Enter your OpenAI API key. If you don't have one, [create one here.](https://platform.openai.com/account/api-keys) If you don't have an OpenAI account, create one first and enter billing details (this workflow is extremely cheap to run – see the FAQ section below for cost info).
 * Follow the instructions in the other required properties. More properties may pop in dynamically based on what you choose.
 * Note the *Optional Fields* below. These aren't required, but you can use them to add more detail to your tasks, switch ChatGPT models, etc.
 * **Test** your workflow to make sure it works.
 * Hit **Deploy** to make your workflow live.
 
-## Privacy
+## FAQs
+
+### Cost
+
+Using the ChatGPT API to parse tasks costs a small amount of money per run. Beyond that, this workflow is free to use and does not require a paid Pipedream plan.
+
+When using the default **gpt-3.5-turbo** model, this workflow typically costs around $0.003 per run. When using **gpt-4**, the average cost increases by about 7.5x, up to $0.022 per run.
+
+Including multiple tasks in a single voice prompt (i.e. single run) will not increase the cost very much. This is because costs are based on how many tokens are in each request to OpenAI, and the system messages in this workflow that instruct ChatGPT on how to process your input take up **far** more tokens than your input likely will.
+
+[More details are available in the full blog post.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)
+
+### Privacy
 
 The request body from your mobile shortcut – shown in `steps.trigger.event.body` above – is sent to OpenAI so ChatGPT can parse it. This is what powers the workflow. No other data is sent to OpenAI. [More details are available in the full blog post.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)
 
