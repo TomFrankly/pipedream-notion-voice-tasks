@@ -155,7 +155,7 @@ export default defineComponent({
 						!model.id.endsWith("0301") &&
 						!model.id.endsWith("0314")
 				);
-			}catch(error){
+			} catch(error){
 				let _error;
 
 				if (error.response) {
@@ -164,7 +164,7 @@ export default defineComponent({
 					_error = new Error(error.message);
 				}
 
-				await this.createFallbackTask(_error, true, "chatgpt")
+				await this.createFallbackTask(_error, true, "chatgpt");
 			}
 		}
 
