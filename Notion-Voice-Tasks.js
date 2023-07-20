@@ -144,16 +144,28 @@ export default defineComponent({
 			const configuration = new Configuration({
 				apiKey: this.openai.$auth.api_key,
 			});
-
 			const openai = new OpenAIApi(configuration);
-			const response = await openai.listModels();
 
-			results = response.data.data.filter(
-				(model) =>
-					model.id.includes("gpt") &&
-					!model.id.endsWith("0301") &&
-					!model.id.endsWith("0314")
-			);
+			try {
+				const response = await openai.listModels();
+
+				results = response.data.data.filter(
+					(model) =>
+						model.id.includes("gpt") &&
+						!model.id.endsWith("0301") &&
+						!model.id.endsWith("0314")
+				);
+			}catch(error){
+				let _error;
+
+				if (error.response) {
+					_error = new Error(error.response.data);
+				} else {
+					_error = new Error(error.message);
+				}
+
+				await this.createFallbackTask(_error, true, "chatgpt")
+			}
 		}
 
 		const notion = new Client({
