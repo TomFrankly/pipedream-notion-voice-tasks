@@ -29,7 +29,7 @@ Below you'll find brief instructions. [Click here for the full instructions](htt
 * In the **trigger** step above, hit **Save and Continue**, leaving the default settings in place.
 * Copy your unique URL from the **Select Event** section. You'll need to add this to your **mobile app workflow**, as it is the URL your app will send requests to.
 * Send a test request via your mobile app (instructions below).
-* Select the test event when it appears. Then click **Continue**
+* Select the test event when it appears. Then click **Continue**.
 
 ### Mobile App Setup
 
