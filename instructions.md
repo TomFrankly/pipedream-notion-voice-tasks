@@ -1,6 +1,6 @@
 ## Overview
 
-This workflow lets create new tasks in Notion **using your voice**. It also includes some advanced features:
+This workflow lets you create new tasks in Notion **using your voice**. It also includes some advanced features:
 
 * You can create multiple tasks in a single voice prompt
 * Relative due dates are supported (e.g. "by *next Friday*")
