@@ -1,7 +1,8 @@
 /** 
  * To Dos:
  * 
- * - Refactor Notion connection
+ * - Figure out the "respond not called for invocation" error
+ * - Either let people create a Source tag from Pipedream, or change the description of that property to say they need to create it in Notion first
  */
 
 import { Client } from "@notionhq/client";
