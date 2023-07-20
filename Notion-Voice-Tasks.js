@@ -85,48 +85,50 @@ export default defineComponent({
 			label: "Tasks Database",
 			description: "Select your tasks database.",
 			async options({ query, prevContext }) {
-				try {
-					const notion = new Client({
-						auth: this.notion.$auth.oauth_access_token,
-					});
-	
-					let start_cursor = prevContext?.cursor;
-	
-					const response = await notion.search({
-						...(query ? { query } : {}),
-						...(start_cursor ? { start_cursor } : {}),
-						page_size: 50,
-						filter: {
-							value: "database",
-							property: "object",
-						},
-						sorts: [
-							{
-								direction: "descending",
-								property: "last_edited_time",
+				if (this.notion) {
+					try {
+						const notion = new Client({
+							auth: this.notion.$auth.oauth_access_token,
+						});
+		
+						let start_cursor = prevContext?.cursor;
+		
+						const response = await notion.search({
+							...(query ? { query } : {}),
+							...(start_cursor ? { start_cursor } : {}),
+							page_size: 50,
+							filter: {
+								value: "database",
+								property: "object",
 							},
-						],
-					});
-	
-					const options = response.results.map((db) => ({
-						label: db.title?.[0]?.plain_text,
-						value: db.id,
-					}));
-	
-					return {
-						context: {
-							cursor: response.next_cursor,
-						},
-						options,
-					};
-				} catch (error) {
-					console.error(error);
-					return {
-						context: {
-							cursor: null,
-						},
-						options: [],
-					};
+							sorts: [
+								{
+									direction: "descending",
+									property: "last_edited_time",
+								},
+							],
+						});
+		
+						const options = response.results.map((db) => ({
+							label: db.title?.[0]?.plain_text,
+							value: db.id,
+						}));
+		
+						return {
+							context: {
+								cursor: response.next_cursor,
+							},
+							options,
+						};
+					} catch (error) {
+						console.error(error);
+						return {
+							context: {
+								cursor: null,
+							},
+							options: [],
+						};
+					}
 				}
 			},
 			reloadProps: true,
@@ -135,25 +137,25 @@ export default defineComponent({
 	async additionalProps() {
 		let results;
 
-		// Create a switchover date, after which we default to the stable model name for 3.5
-		const currentDate = new Date();
-		const switchDate = new Date("2023-07-10");
-
 		if (this.openai) {
-			// Initialize OpenAI
-			const configuration = new Configuration({
-				apiKey: this.openai.$auth.api_key,
-			});
+			try {
+				// Initialize OpenAI
+				const configuration = new Configuration({
+					apiKey: this.openai.$auth.api_key,
+				});
 
-			const openai = new OpenAIApi(configuration);
-			const response = await openai.listModels();
+				const openai = new OpenAIApi(configuration);
+				const response = await openai.listModels();
 
-			results = response.data.data.filter(
-				(model) =>
-					model.id.includes("gpt") &&
-					!model.id.endsWith("0301") &&
-					!model.id.endsWith("0314")
-			);
+				results = response.data.data.filter(
+					(model) =>
+						model.id.includes("gpt") &&
+						!model.id.endsWith("0301") &&
+						!model.id.endsWith("0314")
+				);
+			} catch (err) {
+				console.error(`Encountered an error with OpenAI: ${err} – Please check that your API key is still valid.`);
+			}
 		}
 
 		const notion = new Client({
@@ -306,6 +308,14 @@ export default defineComponent({
 				optional: kanbanFlag ? false : true,
 				reloadProps: true,
 			},
+			advanced_options: {
+				type: "boolean",
+				label: "Enabled Advanced Options",
+				description: `Set this to **True** to enable advanced options for this workflow, including Project database filtering, fuzzy search sensitivity, and more.`,
+				default: false,
+				optional: true,
+				reloadProps: true,
+			},
 			...(selectProps.concat(statusProps).includes("Smart List") && {
 				smart_list: {
 					type: "string", // MUST be able to switch between select and status
@@ -335,7 +345,7 @@ export default defineComponent({
 					optional: true,
 				},
 			}),
-			...(this.project && {
+			...(this.project && this.advanced_options === true && {
 				fuzzy_search_threshold: {
 					type: "integer",
 					label: "Project-matching Search Score Threshold",
@@ -489,11 +499,8 @@ export default defineComponent({
 				chat_model: {
 					type: "string",
 					label: "ChatGPT Model",
-					description: `Select the model you would like to use.\n\nDefaults to ${
-						currentDate < switchDate ? "gpt-3.5-turbo-0613" : "gpt-3.5-turbo"
-					}, which is recommended for this workflow. You can also use gpt-4, which may allow you to speak more "loosely" while retaining accuracy in task parsing. However, it will also increase the average cost of each workflow run by ~7.5x.`,
-					default:
-						currentDate < switchDate ? "gpt-3.5-turbo-0613" : "gpt-3.5-turbo",
+					description: `Select the model you would like to use.\n\nDefaults to **gpt-3.5-turbo**, which is recommended for this workflow. You can also use **gpt-4**, which may allow you to speak more "loosely" while retaining accuracy in task parsing. However, it will also increase the average cost of each workflow run by ~7.5x.`,
+					default: "gpt-3.5-turbo",
 					options: results.map((model) => ({
 						label: model.id,
 						value: model.id,
@@ -501,7 +508,7 @@ export default defineComponent({
 					optional: true,
 				},
 			}),
-			...(this.openai && {
+			...(this.openai && this.advanced_options === true && {
 				send_response: {
 					type: "boolean",
 					label: "Send Response on Completion?",
@@ -510,7 +517,7 @@ export default defineComponent({
 					optional: true,
 				},
 			}),
-			...(this.openai && {
+			...(this.openai && this.advanced_options === true && {
 				update_system: {
 					type: "string",
 					label: "System Message Source",
@@ -1583,7 +1590,7 @@ export default defineComponent({
 							rich_text: [
 								{
 									text: {
-										content: `This task was created via the ${source}. The cost of this request was ${costString}.`,
+										content: `This task was created via the following source: ${source}. The cost of this request was ${costString}.`,
 									},
 								},
 							],
@@ -1615,6 +1622,37 @@ export default defineComponent({
 									type: "text",
 									text: {
 										content: result.full_text,
+									},
+								},
+							],
+						},
+					},
+					{
+						object: "block",
+						type: "paragraph",
+						paragraph: {
+							rich_text: [
+								{
+									type: "text",
+									text: {
+										content: "Entire request sent to ChatGPT:",
+									},
+									annotations: {
+										bold: true,
+									},
+								},
+							],
+						},
+					},
+					{
+						object: "block",
+						type: "paragraph",
+						paragraph: {
+							rich_text: [
+								{
+									type: "text",
+									text: {
+										content: config.original_body.task,
 									},
 								},
 							],
