@@ -2,7 +2,8 @@
  * To Dos:
  * 
  * - Figure out the "respond not called for invocation" error
- * - Either let people create a Source tag from Pipedream, or change the description of that property to say they need to create it in Notion first
+ * X Either let people create a Source tag from Pipedream, or change the description of that property to say they need to create it in Notion first
+ * - Try to solve the "API Response Error: path failed validation" error
  */
 
 import { Client } from "@notionhq/client";
@@ -342,7 +343,7 @@ export default defineComponent({
 					type: "string",
 					label: `Source Value (for chosen propety: ${this.source})`,
 					description:
-						"Type or select a value for your chosen Source property. If you don't choose a Source property, this value will be ignored. If you type in one that doesn't exist, it will be created as an option in your chosen property.",
+						"Type or select a value for your chosen Source property.",
 					options: this.source
 						? properties[this.source].select.options.map((option) => ({
 								label: option.name,
@@ -1840,7 +1841,7 @@ export default defineComponent({
 		},
 	},
 	async run({ steps, $ }) {
-		if (this.send_response === false) {
+		if (!this.send_response || this.send_response === false) {
 			await this.sendResponse($);
 		}
 		
