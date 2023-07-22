@@ -178,7 +178,7 @@ export default defineComponent({
 			}
 		}
 
-		if (!this.databaseId) return {}
+		if (!this.databaseID) return {}
 		
 		const notion = new Client({
 			auth: this.notion.$auth.oauth_access_token,
