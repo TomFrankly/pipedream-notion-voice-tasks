@@ -150,7 +150,8 @@ export default defineComponent({
 		secretKey: {
 			type: "string",
 			label: "Secret Key",
-			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your shortcut is "welcometocostco", set "welcometocostco" here.`,
+			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your mobile app shortcut is "welcometocostco", set "welcometocostco" here.\n\n**Important: Do not share this key, nor your unique trigger URL, with anyone you don't trust.`,
+			secret: true,
 			reloadProps: true,
 		},
 	},
@@ -435,7 +436,7 @@ export default defineComponent({
 					} – (for chosen property: ${this.kanban_status})`,
 					description: `Choose a value for your Kanban Status property${
 						kanbanFlag ? requiredString + "." : "."
-					} If you don't choose one, Kanban Status will be ignored.`,
+					}`,
 					options: this.kanban_status
 						? properties[this.kanban_status][
 								properties[this.kanban_status]?.type
@@ -445,6 +446,9 @@ export default defineComponent({
 						  }))
 						: [],
 					optional: this.kanban_status && kanbanFlag ? false : true,
+					...(properties[this.kanban_status][properties[this.kanban_status]?.type].options.some((element) => element.toLowerCase().includes("to do")) && {
+						default: properties[this.kanban_status][properties[this.kanban_status]?.type].options.find((element) => element.toLowerCase().includes("to do")),
+					})
 				},
 			}),
 			...(this.priority && {
@@ -455,7 +459,7 @@ export default defineComponent({
 					} – (for chosen property: ${this.priority})`,
 					description: `Choose a value for your Priority property${
 						priorityFlag ? requiredString + "." : "."
-					} If you don't choose one, Priority will be ignored.`,
+					}`,
 					options: this.priority
 						? properties[this.priority][
 								properties[this.priority]?.type
@@ -465,6 +469,9 @@ export default defineComponent({
 						  }))
 						: [],
 					optional: this.priority && priorityFlag ? false : true,
+					...(properties[this.priority][properties[this.priority]?.type].options.some((element) => element.toLowerCase().includes("medium")) && {
+						default: properties[this.priority][properties[this.priority]?.type].options.find((element) => element.toLowerCase().includes("medium")),
+					})
 				},
 			}),
 			...(this.smart_list && {
