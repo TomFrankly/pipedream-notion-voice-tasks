@@ -76,11 +76,6 @@ export default defineComponent({
 			app: "notion",
 			description: `Connect your Notion account. When setting up the connection, be sure to grant Pipedream access to your Task and Project database, or to a page that contains them.`,
 		},
-		secretKey: {
-			type: "string",
-			label: "Secret Key",
-			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your shortcut is "welcometocostco", set "welcometocostco" here.`,
-		},
 		databaseID: {
 			type: "string",
 			label: "Tasks Database",
@@ -91,9 +86,9 @@ export default defineComponent({
 						const notion = new Client({
 							auth: this.notion.$auth.oauth_access_token,
 						});
-		
+			
 						let start_cursor = prevContext?.cursor;
-		
+			
 						const response = await notion.search({
 							...(query ? { query } : {}),
 							...(start_cursor ? { start_cursor } : {}),
@@ -109,12 +104,27 @@ export default defineComponent({
 								},
 							],
 						});
-		
-						const options = response.results.map((db) => ({
-							label: db.title?.[0]?.plain_text,
+			
+						let allTasksDbs = response.results.filter((db) =>
+							db.title?.[0]?.plain_text.includes("All Tasks")
+						);
+						let nonTaskDbs = response.results.filter(
+							(db) => !db.title?.[0]?.plain_text.includes("All Tasks")
+						);
+						let sortedDbs = [...allTasksDbs, ...nonTaskDbs];
+						const UTregex = /All Tasks/;
+						const UTLabel = " – (used for Ultimate Tasks)";
+						const UBregex = /All Tasks \[\w*\]/;
+						const UBLabel = " – (used for Ultimate Brain)";
+						const options = sortedDbs.map((db) => ({
+							label: UBregex.test(db.title?.[0]?.plain_text)
+								? db.title?.[0]?.plain_text + UBLabel
+								: UTregex.test(db.title?.[0]?.plain_text)
+								? db.title?.[0]?.plain_text + UTLabel
+								: db.title?.[0]?.plain_text,
 							value: db.id,
 						}));
-		
+			
 						return {
 							context: {
 								cursor: response.next_cursor,
@@ -136,6 +146,11 @@ export default defineComponent({
 					}
 				}
 			},
+		},
+		secretKey: {
+			type: "string",
+			label: "Secret Key",
+			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your shortcut is "welcometocostco", set "welcometocostco" here.`,
 			reloadProps: true,
 		},
 	},
@@ -163,6 +178,8 @@ export default defineComponent({
 			}
 		}
 
+		if (!this.databaseId) return {}
+		
 		const notion = new Client({
 			auth: this.notion.$auth.oauth_access_token,
 		});
