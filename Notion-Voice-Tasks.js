@@ -324,7 +324,7 @@ export default defineComponent({
 					kanbanFlag
 						? requiredString
 						: ". Typically only used by Ultimate Tasks/Ultimate Brain users."
-				}\n\nIf you don't see the Priority Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
+				}\n\nIf you don't see the Kanban Status Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
 				options: selectProps
 					.concat(statusProps)
 					.map((prop) => ({ label: prop, value: prop })),
