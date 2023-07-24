@@ -1,6 +1,10 @@
+⬆ Don't forget to connect your OpenAI account!
+
 ## Overview
 
-This workflow lets you create new tasks in Notion **using your voice**. It also includes some advanced features:
+This workflow lets you create new tasks in Notion from your phone, **using your voice**. 
+
+It also includes some advanced features:
 
 * You can create multiple tasks in a single voice prompt
 * Relative due dates are supported (e.g. "by *next Friday*")
@@ -12,24 +16,23 @@ This workflow lets you create new tasks in Notion **using your voice**. It also 
 
 This workflow will work with any Notion database.
 
-### Looking for a template to use?
+### Upgrade Your Notion Experience
+
+While this workflow will work with any Notion database, it's even better with a template.
 
 For general productivity use, you'll love [Ultimate Brain](https://thomasjfrank.com/brain/) – my all-in-one second brain template for Notion. 
 
 Ultimate Brain brings tasks, notes, projects, and goals all into one tool. Naturally, it works very well with this workflow.
 
-**Are you a creator?** My [Creator's Companion](https://thomasjfrank.com/creators-companion/) template includes a ton of features that will help you make better-performing content and optimize your production process. There's even a version that includes Ultimate Brain, so you can easily use this workflow to create tasks related to your content.
+**Are you a creator?** 
+
+My [Creator's Companion](https://thomasjfrank.com/creators-companion/) template includes a ton of features that will help you make better-performing content and optimize your production process. There's even a version that includes Ultimate Brain, so you can easily use this workflow to create tasks related to your content.
+
+*P.S. – This free workflow took 3 months to build. If you'd like to support my work, buying one of my templates is the best way to do so!*
 
 ## Instructions
 
-Below you'll find brief instructions. [Click here for the full instructions](https://thomasjfrank.com/notion-chatgpt-voice-tasks/), which include screenshots and a video tutorial.
-
-### Trigger Step
-
-* In the **trigger** step above, hit **Save and Continue**, leaving the default settings in place.
-* Copy your unique URL from the **Select Event** section. You'll need to add this to your **mobile app workflow**, as it is the URL your app will send requests to.
-* Send a test request via your mobile app (instructions below).
-* Select the test event when it appears. Then click **Continue**.
+[Click here for the full instructions on setting up this workflow.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#instructions)
 
 ### Mobile App Setup
 
@@ -42,33 +45,25 @@ Once you've set up the workflow on your phone, run it once to send a Test Event 
 
 *Technically, you can also create tasks via any tool that will let you make an HTTP request with a JSON body. [See the full blog post for instructions on this.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#http-generic)*
 
-### This Step
+## Creating Tasks
 
-* Enter your OpenAI API key. If you don't have one, [create one here.](https://platform.openai.com/account/api-keys) If you don't have an OpenAI account, create one first and enter billing details (this workflow is extremely cheap to run – see the FAQ section below for cost info).
-* Follow the instructions in the other required properties. More properties may pop in dynamically based on what you choose.
-* Note the *Optional Fields* below. These aren't required, but you can use them to add more detail to your tasks, switch ChatGPT models, etc.
-* **Test** your workflow to make sure it works.
-* Hit **Deploy** to make your workflow live.
+When creating tasks, you'll get the best results when you follow a couple of simple rules:
+
+1. For due dates, say "by [date]" or "due [date]" at the end your task phrase. *E.G. "I need to finish planning the team retreat **by Friday**.*
+2. For projects, you must use the word **"project"**. *E.G. "Tony needs to mount the audio foam **for the studio design project** by next Tuesday.*
+
+Beyond that, this workflow is pretty flexible! Note that you can add multiple tasks in a single voice command. Example:
+
+*"I need to finish my video script by Tuesday and Brian needs to create the environment model in Blender by July 30 and Tony needs to upload the green screen test footage by tomorrow."*
 
 ## FAQs
 
-### Cost
+Below you'll find links that answer frequently asked questions about this workflow.
 
-Using the ChatGPT API to parse tasks costs a small amount of money per run. Beyond that, this workflow is free to use and does not require a paid Pipedream plan.
-
-When using the default **gpt-3.5-turbo** model, this workflow typically costs around $0.003 per run. When using **gpt-4**, the average cost increases by about 7.5x, up to $0.022 per run.
-
-Including multiple tasks in a single voice prompt (i.e. single run) will not increase the cost very much. This is because costs are based on how many tokens are in each request to OpenAI, and the system messages in this workflow that instruct ChatGPT on how to process your input take up **far** more tokens than your input likely will.
-
-[More details are available in the full blog post.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)
-
-### Privacy
-
-The request body from your mobile shortcut – shown in `steps.trigger.event.body` above – is sent to OpenAI so ChatGPT can parse it. This is what powers the workflow. No other data is sent to OpenAI. [More details are available in the full blog post.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)
-
-### Code
-
-The code that runs this workflow has been compressed for performance reasons. If you want, you can [view my uncompressed code on Github.](https://github.com/TomFrankly/pipedream-notion-voice-tasks/blob/main/Notion-Voice-Tasks.js)
+* [Cost FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)
+* [Privacy FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)
+* [Code FAQs and GitHub Repo](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#code)
+* [Support FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#support)
 
 ## More Resources
 
