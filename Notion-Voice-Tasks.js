@@ -446,9 +446,6 @@ export default defineComponent({
 						  }))
 						: [],
 					optional: this.kanban_status && kanbanFlag ? false : true,
-					...(properties[this.kanban_status][properties[this.kanban_status]?.type].options.some((element) => element.name.toLowerCase().includes("to do")) && {
-						default: properties[this.kanban_status][properties[this.kanban_status]?.type].options.find((element) => element.name.toLowerCase().includes("to do")),
-					})
 				},
 			}),
 			...(this.priority && {
@@ -469,9 +466,6 @@ export default defineComponent({
 						  }))
 						: [],
 					optional: this.priority && priorityFlag ? false : true,
-					...(properties[this.priority][properties[this.priority]?.type].options.some((element) => element.name.toLowerCase().includes("medium")) && {
-						default: properties[this.priority][properties[this.priority]?.type].options.find((element) => element.name.toLowerCase().includes("medium")),
-					})
 				},
 			}),
 			...(this.smart_list && {
