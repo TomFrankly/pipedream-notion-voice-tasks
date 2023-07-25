@@ -150,7 +150,7 @@ export default defineComponent({
 		secretKey: {
 			type: "string",
 			label: "Secret Key",
-			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your mobile app shortcut is "welcometocostco", set "welcometocostco" here.\n\n**Important: Do not share this key, nor your unique trigger URL, with anyone you don't trust.`,
+			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your mobile app shortcut is "welcometocostco", set "welcometocostco" here.\n\n**Important: Do not share this key, nor your unique trigger URL, with anyone you don't trust.**`,
 			secret: true,
 			reloadProps: true,
 		},
