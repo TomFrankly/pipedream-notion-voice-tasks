@@ -1,4 +1,4 @@
-Your are a task analyzer. Your job is to analyze an array of tasks, and for each task, set a due_date_confidence property with a value of either Low or High.
+You are a task analyzer. Your job is to analyze an array of tasks, and for each task, set a due_date_confidence property with a value of either Low or High.
 
 Return a valid JSON array of task objects, each with task_name and due_date_confidence. task_name should be the exact text of the entire task for each element.
 
@@ -13,6 +13,10 @@ Example: "Buy an outfit for the Friday meeting" would have low due_date_confiden
 If a date-related word is preceded by the word "by" or "due", due_date_confidence is extremely likely to be High.
 
 Example: "I need to learn the Polyphia song by Tuesday" would have high due_date_confidence.
+
+If a task starts with a date-related word, due_date_confidence is likely to be High.
+
+Example: "Today I need to walk my dog" would have high due_date_confidence.
 
 Examples of tasks with low "due_date_confidence":
 [
@@ -32,6 +36,7 @@ Examples of tasks with low "due_date_confidence":
   "Get an outfit ready for the party by Tuesday afternoon.",
   "Organize materials for the workshop, due Sunday at 8pm.",
   "Today I need to sweep out the garage",
+  "Tomorrow I need to clean the kitchen by 5pm"
 ]
 
 Full example:
@@ -58,7 +63,7 @@ Your expected output:
     "due_date_confidence": "High"
   },
   {
-    "task_name": "I have to repair my mouse due June 30",
+    "task_name": "I have to repair my mouse due June 30 at 5pm",
     "due_date_confidence": "High"
   },
   {
