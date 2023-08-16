@@ -1,4 +1,4 @@
-⬆ Don't forget to connect your OpenAI account!
+⬆ Don't forget to connect your OpenAI account! I also recommend setting your [OpenAI Hard Limit](https://platform.openai.com/account/billing/limits) to a lower value, such as $10; you likely don't need it to be the default of $120/mo.
 
 ## Overview
 
@@ -62,6 +62,7 @@ Below you'll find links that answer frequently asked questions about this workfl
 
 * [Cost FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)
 * [Privacy FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)
+* [Security FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#security)
 * [Code FAQs and GitHub Repo](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#code)
 * [Support FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#support)
 

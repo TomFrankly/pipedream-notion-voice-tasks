@@ -1,3 +1,15 @@
+/** 
+ * To Do:
+ * X Add disclaimer to the secret key
+ * X Fix "Enabled" bug
+ * X Lower max prompt tokens
+ * - Ensure email is sent on secret key inconsistency
+ * X Add Security FAQ to the instructions
+ * X Run secret key check at the beginning of run(), in checkBody()
+ * X Send an email if prompt is over 150 tokens
+ * X On secret key fail, show the secret key
+ */
+
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
@@ -21,7 +33,7 @@ const config = {
 		},
 	},
 	default_workflow_source: "",
-	maxtokens: 2000,
+	maxtokens: 500,
 	model: "",
 	system_messages: {
 		user_name: "",
@@ -69,7 +81,7 @@ export default defineComponent({
 		openai: {
 			type: "app",
 			app: "openai",
-			description: `⬆ Don\'t forget to connect your OpenAI account!\n\n## Overview\n\nThis workflow lets you create new tasks in Notion from your phone, **using your voice**. \n\nIt also includes some advanced features:\n\n* You can create multiple tasks in a single voice prompt\n* Relative due dates are supported (e.g. \"by *next Friday*\")\n* You can mention assignees and projects, which the workflow will attempt to intelligently match to existing Notion users and projects\n\n**Need help with this workflow? [Check out the full instructions and FAQ here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/)**\n\n## Compatibility\n\nThis workflow will work with any Notion database.\n\n### Upgrade Your Notion Experience\n\nWhile this workflow will work with any Notion database, it\'s even better with a template.\n\nFor general productivity use, you\'ll love [Ultimate Brain](https://thomasjfrank.com/brain/) – my all-in-one second brain template for Notion. \n\nUltimate Brain brings tasks, notes, projects, and goals all into one tool. Naturally, it works very well with this workflow.\n\n**Are you a creator?** \n\nMy [Creator\'s Companion](https://thomasjfrank.com/creators-companion/) template includes a ton of features that will help you make better-performing content and optimize your production process. There\'s even a version that includes Ultimate Brain, so you can easily use this workflow to create tasks related to your content.\n\n*P.S. – This free workflow took 3 months to build. If you\'d like to support my work, buying one of my templates is the best way to do so!*\n\n## Instructions\n\n[Click here for the full instructions on setting up this workflow.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#instructions)\n\n### Mobile App Setup\n\nYou can create voice tasks with this workflow on iOS, MacOS, and Android.\n\n* For MacOS and iOS (iPhone, iPad), we\'ll use the **Shortcuts** app. [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#ios)\n* For Android, we\'ll use the **Tasker** app ($3.49 USD, one-time). [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#android) *At this time, I know of no free app for Android that can handle this workflow.*\n\nOnce you\'ve set up the workflow on your phone, run it once to send a Test Event to this Pipedream workflow.\n\n*Technically, you can also create tasks via any tool that will let you make an HTTP request with a JSON body. [See the full blog post for instructions on this.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#http-generic)*\n\n## Creating Tasks\n\nWhen creating tasks, you\'ll get the best results when you follow a couple of simple rules:\n\n1. For due dates, say \"by [date]\" or \"due [date]\" at the end your task phrase. *E.G. \"I need to finish planning the team retreat **by Friday**.*\n2. For projects, you must use the word **\"project\"**. *E.G. \"Tony needs to mount the audio foam **for the studio design project** by next Tuesday.*\n\nBeyond that, this workflow is pretty flexible! Note that you can add multiple tasks in a single voice command. Example:\n\n*\"I need to finish my video script by Tuesday and Brian needs to create the environment model in Blender by July 30 and Tony needs to upload the green screen test footage by tomorrow.\"*\n\n## FAQs\n\nBelow you\'ll find links that answer frequently asked questions about this workflow.\n\n* [Cost FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)\n* [Privacy FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)\n* [Code FAQs and GitHub Repo](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#code)\n* [Support FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#support)\n\n## More Resources\n\n**More automations you may find useful:**\n\n* [Send Voice Note Transcriptions and Summaries to Notion](https://thomasjfrank.com/how-to-transcribe-audio-to-text-with-chatgpt-and-notion/)\n* [Notion to Google Calendar Sync](https://thomasjfrank.com/notion-google-calendar-sync/)\n\n**All My Notion Automations:**\n\n* [Notion Automations Hub](https://thomasjfrank.com/notion-automations/)\n\n**Want to get notified about updates to this workflow (and about new Notion templates, automations, and tutorials)?**\n\n* [Join my Notion Tips newsletter](https://thomasjfrank.com/fundamentals/#get-the-newsletter)\n`,
+			description: `⬆ Don\'t forget to connect your OpenAI account! I also recommend setting your [OpenAI Hard Limit](https://platform.openai.com/account/billing/limits) to a lower value, such as $10; you likely don't need it to be the default of $120/mo.\n\n## Overview\n\nThis workflow lets you create new tasks in Notion from your phone, **using your voice**. \n\nIt also includes some advanced features:\n\n* You can create multiple tasks in a single voice prompt\n* Relative due dates are supported (e.g. \"by *next Friday*\")\n* You can mention assignees and projects, which the workflow will attempt to intelligently match to existing Notion users and projects\n\n**Need help with this workflow? [Check out the full instructions and FAQ here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/)**\n\n## Compatibility\n\nThis workflow will work with any Notion database.\n\n### Upgrade Your Notion Experience\n\nWhile this workflow will work with any Notion database, it\'s even better with a template.\n\nFor general productivity use, you\'ll love [Ultimate Brain](https://thomasjfrank.com/brain/) – my all-in-one second brain template for Notion. \n\nUltimate Brain brings tasks, notes, projects, and goals all into one tool. Naturally, it works very well with this workflow.\n\n**Are you a creator?** \n\nMy [Creator\'s Companion](https://thomasjfrank.com/creators-companion/) template includes a ton of features that will help you make better-performing content and optimize your production process. There\'s even a version that includes Ultimate Brain, so you can easily use this workflow to create tasks related to your content.\n\n*P.S. – This free workflow took 3 months to build. If you\'d like to support my work, buying one of my templates is the best way to do so!*\n\n## Instructions\n\n[Click here for the full instructions on setting up this workflow.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#instructions)\n\n### Mobile App Setup\n\nYou can create voice tasks with this workflow on iOS, MacOS, and Android.\n\n* For MacOS and iOS (iPhone, iPad), we\'ll use the **Shortcuts** app. [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#ios)\n* For Android, we\'ll use the **Tasker** app ($3.49 USD, one-time). [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#android) *At this time, I know of no free app for Android that can handle this workflow.*\n\nOnce you\'ve set up the workflow on your phone, run it once to send a Test Event to this Pipedream workflow.\n\n*Technically, you can also create tasks via any tool that will let you make an HTTP request with a JSON body. [See the full blog post for instructions on this.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#http-generic)*\n\n## Creating Tasks\n\nWhen creating tasks, you\'ll get the best results when you follow a couple of simple rules:\n\n1. For due dates, say \"by [date]\" or \"due [date]\" at the end your task phrase. *E.G. \"I need to finish planning the team retreat **by Friday**.*\n2. For projects, you must use the word **\"project\"**. *E.G. \"Tony needs to mount the audio foam **for the studio design project** by next Tuesday.*\n\nBeyond that, this workflow is pretty flexible! Note that you can add multiple tasks in a single voice command. Example:\n\n*\"I need to finish my video script by Tuesday and Brian needs to create the environment model in Blender by July 30 and Tony needs to upload the green screen test footage by tomorrow.\"*\n\n## FAQs\n\nBelow you\'ll find links that answer frequently asked questions about this workflow.\n\n* [Cost FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)\n* [Privacy FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)\n* [Security FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#security)\n* [Code FAQs and GitHub Repo](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#code)\n* [Support FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#support)\n\n## More Resources\n\n**More automations you may find useful:**\n\n* [Send Voice Note Transcriptions and Summaries to Notion](https://thomasjfrank.com/how-to-transcribe-audio-to-text-with-chatgpt-and-notion/)\n* [Notion to Google Calendar Sync](https://thomasjfrank.com/notion-google-calendar-sync/)\n\n**All My Notion Automations:**\n\n* [Notion Automations Hub](https://thomasjfrank.com/notion-automations/)\n\n**Want to get notified about updates to this workflow (and about new Notion templates, automations, and tutorials)?**\n\n* [Join my Notion Tips newsletter](https://thomasjfrank.com/fundamentals/#get-the-newsletter)`,
 		},
 		notion: {
 			type: "app",
@@ -149,8 +161,8 @@ export default defineComponent({
 		},
 		secretKey: {
 			type: "string",
-			label: "Secret Key",
-			description: `Set a secret key here that matches the secret key from your iOS/Android shortcut exactly.\n\nWhen you workflow receives a new request, the secret key in the request body will be compared against this value. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your mobile app shortcut is "welcometocostco", set "welcometocostco" here.\n\n**Important: Do not share this key, nor your unique trigger URL, with anyone you don't trust.**`,
+			label: "Secret Key [TYPE THIS MANUALLY]",
+			description: `**MANUALLY TYPE a secret key** that matches the secret key from your iOS/Android shortcut exactly. *Do NOT use the dropdown to select a path here.*\n\n**Important: This workflow is provided for free, as-is, and without warranty. Use this workflow at your own risk. Make sure to keep your trigger URL (shown in the trigger step above) and this secret key SECRET. Treat both like passwords. I also recommend setting your [OpenAI Hard Limit](https://platform.openai.com/account/billing/limits) to a lower amount, such as $10 (normal use of this workflow costs around $0.003 per run, so your use shoudl never even come close to that).**\n\nAs long as you don't share your trigger URL and secret key with unauthorized people, this workflow is safe to use. [You can read all of the security info here](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#security).\n\n**Here's how this secret key feature works:**\n\nWhen your workflow receives a new request, the secret key in the request body will be compared against the key you have entered here. If they match, the workflow will continue.\n\nThis prevents others from sending requests to your workflow, even in the rare event that they knew your request URL.\n\n**Example:** if your secret key in your mobile app shortcut is "welcometocostco", set "welcometocostco" here.\n\n**Important: Do not share this key, nor your unique trigger URL, with anyone you don't trust.**`,
 			secret: true,
 			reloadProps: true,
 		},
@@ -333,7 +345,7 @@ export default defineComponent({
 			},
 			advanced_options: {
 				type: "boolean",
-				label: "Enabled Advanced Options",
+				label: "Enable Advanced Options",
 				description: `Set this to **True** to enable advanced options for this workflow, including Project database filtering, fuzzy search sensitivity, and more.`,
 				default: false,
 				optional: true,
@@ -740,8 +752,8 @@ export default defineComponent({
 		async validateUserInput(data) {
 			// Check the secret key to ensure the request came from the correct sender
 			if (!data.secret || data.secret !== this.secretKey) {
-				const error = new Error("Secret key in the request doesn't match the one set in the workflow settings.");
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error("Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " + data.secret);
+				await this.createFallbackTask(error, true, "config")
 			}
 
 			// Define the Joi schema for each property in the data
@@ -1780,8 +1792,22 @@ export default defineComponent({
 					const error = new Error(
 						`Missing property "${prop}" in request body.`
 					);
-					await this.createFallbackTask(error)
+					await this.createFallbackTask(error, true, "config")
 				}
+			}
+
+			if (config.original_body.secret !== this.secret) {
+				const error = new Error("Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " + config.original_body.secret);
+				await this.createFallbackTask(error, true, "config")
+			}
+
+			// Send the user a warning email if the task text was over 750 chars
+			if (config.original_body.task.length > 750) {
+				const $ = config.pipedream;
+				$.send.email({
+					subject: `[Notion Voice Tasks] – Warning: Abnormally long task text`,
+					text: `A request was sent to your Notion Voice Tasks workflow in Pipedream with task text over 750 characters.\n\nIf you or one or your authorized users sent this request, you can safely disregard this email.\n\nOtherwise, please check your workflow history to check if an unauthorized party is sending requests to your workflow.\n\nThe full text of your request is:\n\n${config.original_body.task}`,
+				});
 			}
 		},
 		async createFallbackTask(error, terminate = true, source = "notion") {
@@ -1791,6 +1817,8 @@ export default defineComponent({
 				console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion and emailing the user...");
 			} else if (source === "notion") {
 				console.log("Failed to create the task(s) in Notion. Sending error email to user...");
+			} else if (source === "config") {
+				console.log("A configuration error occured. Sending error email to user...")
 			} else {
 				console.log("An error occurred. Sending error email to user...");
 			}
@@ -1814,6 +1842,13 @@ export default defineComponent({
 						return `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`
 					},
 					http_response: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`
+				},
+				config: {
+					subject: `[Notion Voice Tasks] – Configuration Error`,
+					body() {
+						return `A configuration error occured in your Notion Voice Tasks workflow. The error message is:\n\n${error}`
+					},
+					http_response: `Failed to create task(s) in Notion due to a configuration error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`
 				}
 			}
 
@@ -1862,11 +1897,11 @@ export default defineComponent({
 		// Add the original body to the config (used as a fallback if ChatGPT fails)
 		config.original_body = steps.trigger.event.body;
 		
-		// Check the request body for all required properties
-		await this.checkBody();
-
 		// Add the pipedream object to the config
 		config.pipedream = $;
+		
+		// Check the request body for all required properties
+		await this.checkBody();
 
 		// Initialize the Notion SDK
 		const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
