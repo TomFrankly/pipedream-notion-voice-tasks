@@ -3,11 +3,13 @@
  * X Add disclaimer to the secret key
  * X Fix "Enabled" bug
  * X Lower max prompt tokens
- * - Ensure email is sent on secret key inconsistency
+ * X Ensure email is sent on secret key inconsistency
  * X Add Security FAQ to the instructions
  * X Run secret key check at the beginning of run(), in checkBody()
  * X Send an email if prompt is over 150 tokens
  * X On secret key fail, show the secret key
+ * X Add advanced option to strip midnight due times
+ * X Add FAQ link to Tasks Database showing how to reconnect database manually
  */
 
 import { Client } from "@notionhq/client";
@@ -86,12 +88,12 @@ export default defineComponent({
 		notion: {
 			type: "app",
 			app: "notion",
-			description: `Connect your Notion account. When setting up the connection, be sure to grant Pipedream access to your Task and Project database, or to a page that contains them.`,
+			description: `Connect your Notion account. When setting up the connection, be sure to grant Pipedream access to your Task and Project databases, or to a page that contains them.`,
 		},
 		databaseID: {
 			type: "string",
 			label: "Tasks Database",
-			description: "Select your tasks database.",
+			description: "Select your tasks database. *If you don't see your database here, try waiting 1-2 minutes and then refreshing the page. If that doesn't work, [please read this FAQ section](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#missing-database).*",
 			async options({ query, prevContext }) {
 				if (this.notion) {
 					try {
@@ -551,6 +553,15 @@ export default defineComponent({
 					default: false,
 					optional: true,
 				},
+			}),
+			...(this.advanced_options === true && {
+				remove_midnight: {
+					type: "boolean",
+					label: "Remove Mightnight (00:00) Due Times",
+					description: `Set this to **true** if you would like to remove the due time from tasks that have a due time of midnight (00:00).\n\nThe ChatGPT system instructions have been written so that tasks without a due time should not have one in the due date property, but sometimes ChatGPT ignores this instruction and applies a due time of 00:00.\n\nBy enabling this feature, that 00:00 due time will be stripped out before your task is sent to Notion.`,
+					default: false,
+					optional: true,
+				}
 			}),
 			...(this.openai && this.advanced_options === true && {
 				update_system: {
@@ -1521,15 +1532,29 @@ export default defineComponent({
 			return filter;
 		},
 		formatChatResponse(resultsArray, cost, source) {
-			// To do: Make sure this works, call it from run()
 			return resultsArray.map((result) =>
 				this.creatNotionObject(result, cost, source)
 			);
 		},
 		creatNotionObject(result, cost, source = "Pipedream") {
-			// To do: Adjust all the config.props references to make more sense
-			// Format the cost
 			const costString = `$${cost.toFixed(4)}`;
+
+			if (this.remove_midnight === true && result.due) {
+				const pattern = /T00:00:00(\.\d+)?[+-]\d{2}:\d{2}$/;
+				if (pattern.test(result.due)) {
+					console.log('Midnight time part removed from result.due');
+					result.due = result.due.replace(pattern, '');
+				}
+			}
+
+			if (this.remove_midnight === true && result.due_end) {
+				const pattern = /T00:00:00(\.\d+)?[+-]\d{2}:\d{2}$/;
+  				if (pattern.test(result.due_end)) {
+					console.log('Midnight time part removed from result.due_end');
+					result.due_end = result.due_end.replace(pattern, '');
+				}
+			}
+
 
 			return {
 				parent: {
@@ -2024,7 +2049,7 @@ export default defineComponent({
 			config.properties.tasks_source_value ?? undefined
 		);
 
-		console.log(JSON.stringify(formattedResponse));
+		console.log("Formatted Response:");
 		console.log(formattedResponse);
 
 		console.log("Sending tasks to Notion...")
