@@ -1,17 +1,3 @@
-/** 
- * To Do:
- * X Add disclaimer to the secret key
- * X Fix "Enabled" bug
- * X Lower max prompt tokens
- * X Ensure email is sent on secret key inconsistency
- * X Add Security FAQ to the instructions
- * X Run secret key check at the beginning of run(), in checkBody()
- * X Send an email if prompt is over 150 tokens
- * X On secret key fail, show the secret key
- * X Add advanced option to strip midnight due times
- * X Add FAQ link to Tasks Database showing how to reconnect database manually
- */
-
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
