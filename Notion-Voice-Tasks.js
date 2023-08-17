@@ -225,6 +225,16 @@ export default defineComponent({
 			(k) => properties[k].type === "status"
 		);
 
+		function buildOptions(props, topOption) {
+			const combinedProps = [topOption]
+				.concat(props)
+				.filter((value, index, self) => self.indexOf(value) === index);
+
+			return combinedProps.map((prop) => ({ label: prop, value: prop }));
+		}
+
+		const combinedProps = selectProps.concat(statusProps);
+
 		// If a Project relation is selected, retrieve the correpsonding database and get its properties for filtering
 		let projectProperties;
 		const projectFilterProps = {};
@@ -312,9 +322,7 @@ export default defineComponent({
 						? requiredString
 						: ". Typically only used by Ultimate Tasks/Ultimate Brain users."
 				}\n\nIf you don't see the Priority Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
-				options: selectProps
-					.concat(statusProps)
-					.map((prop) => ({ label: prop, value: prop })),
+				options: buildOptions(combinedProps, "Priority"),
 				optional: priorityFlag ? false : true,
 				reloadProps: true,
 			},
@@ -326,9 +334,7 @@ export default defineComponent({
 						? requiredString
 						: ". Typically only used by Ultimate Tasks/Ultimate Brain users."
 				}\n\nIf you don't see the Kanban Status Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
-				options: selectProps
-					.concat(statusProps)
-					.map((prop) => ({ label: prop, value: prop })),
+				options: buildOptions(combinedProps, "Kanban Status"),
 				optional: kanbanFlag ? false : true,
 				reloadProps: true,
 			},
@@ -435,25 +441,19 @@ export default defineComponent({
 					type: "string",
 					label: `Kanban Status Value${
 						kanbanFlag ? requiredString : ""
-					} – (for chosen property: ${this.kanban_status})`,
+					} – (for chosen property: ${this.kanban_status})`,
 					description: `Choose a value for your Kanban Status property${
 						kanbanFlag ? requiredString + "." : "."
 					}`,
 					options: this.kanban_status
 						? properties[this.kanban_status][
 								properties[this.kanban_status]?.type
-						  ].options
-								.map((option) => ({
-									label: option.name,
-									value: option.name,
-								}))
-								.sort((a, b) => {
-									if (a.label === "Kanban Status") return -1;
-									if (b.label === "Kanban Status") return 1;
-									return 0;
-								})
+						  ].options.map((option) => ({
+								label: option.name,
+								value: option.name,
+						  }))
 						: [],
-					optional: kanbanFlag ? false : true,
+					optional: this.kanban_status && kanbanFlag ? false : true,
 				},
 			}),
 			...(this.priority && {
@@ -466,18 +466,14 @@ export default defineComponent({
 						priorityFlag ? requiredString + "." : "."
 					}`,
 					options: this.priority
-						? properties[this.priority][properties[this.priority]?.type].options
-								.map((option) => ({
-									label: option.name,
-									value: option.name,
-								}))
-								.sort((a, b) => {
-									if (a.label === "Priorty") return -1;
-									if (b.label === "Priority") return 1;
-									return 0;
-								})
+						? properties[this.priority][
+								properties[this.priority]?.type
+						  ].options.map((option) => ({
+								label: option.name,
+								value: option.name,
+						  }))
 						: [],
-					optional: priorityFlag ? false : true,
+					optional: this.priority && priorityFlag ? false : true,
 				},
 			}),
 			...(this.smart_list && {
