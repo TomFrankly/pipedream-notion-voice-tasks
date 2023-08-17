@@ -1,3 +1,9 @@
+/**
+ * To Do
+ * - Make "Kanban Status" the first choice
+ * - Make "Priority" the first choice
+ */
+
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
@@ -1804,7 +1810,7 @@ export default defineComponent({
 				}
 			}
 
-			if (config.original_body.secret !== this.secret) {
+			if (config.original_body.secret !== this.secretKey) {
 				const error = new Error("Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " + config.original_body.secret);
 				await this.createFallbackTask(error, true, "config")
 			}
