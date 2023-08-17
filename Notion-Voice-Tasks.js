@@ -166,7 +166,7 @@ export default defineComponent({
 				});
 				const response = await openai.models.list();
 
-				results = response.data.data.filter(
+				results = response.data.filter(
 					(model) =>
 						model.id.includes("gpt") &&
 						!model.id.endsWith("0301") &&
@@ -614,13 +614,13 @@ export default defineComponent({
 
 				// Get the cost of the operation
 				const gpt4Cost = await this.calculateGPTCost(
-					gpt4Response.data.usage,
-					gpt4Response.data.model
+					gpt4Response.usage,
+					gpt4Response.model
 				);
 
 				// Validate the response from GPT-4
 				const validatedResponse = await this.validateChatGPTResponse(
-					gpt4Response.data.choices[0].message.content
+					gpt4Response.choices[0].message.content
 				);
 
 				console.log("Response Validated. Validated Response:");
@@ -636,7 +636,7 @@ export default defineComponent({
 					start_timestamp: startTimestamp,
 					validated_body: validatedBody,
 					cost: gpt4Cost,
-					model: gpt4Response.data.model,
+					model: gpt4Response.model,
 					validated_response: validatedResponse,
 					final_response: refinedResponse,
 					full_response: gpt4Response,
@@ -654,13 +654,13 @@ export default defineComponent({
 
 				// Get the cost of Round 1
 				const roundOneCost = await this.calculateGPTCost(
-					roundOneResponse.data.usage,
-					roundOneResponse.data.model
+					roundOneResponse.usage,
+					roundOneResponse.model
 				);
 
 				// Validate the response from ChatGPT (Round 1)
 				const validatedResponseOne = await this.validateChatGPTResponse(
-					roundOneResponse.data.choices[0].message.content
+					roundOneResponse.choices[0].message.content
 				);
 
 				console.log("Round One Validated. Validated Response:");
@@ -677,13 +677,13 @@ export default defineComponent({
 
 				// Get the cost of Round 2
 				const roundTwoCost = await this.calculateGPTCost(
-					roundTwoResponse.data.usage,
-					roundTwoResponse.data.model
+					roundTwoResponse.usage,
+					roundTwoResponse.model
 				);
 
 				// Validate the response from ChatGPT (Round 2)
 				const validatedResponseTwo = await this.validateChatGPTResponse(
-					roundTwoResponse.data.choices[0].message.content
+					roundTwoResponse.choices[0].message.content
 				);
 
 				console.log("Round Two Validated.");
@@ -702,13 +702,13 @@ export default defineComponent({
 
 				// Get the cost of Round 2
 				const roundThreeCost = await this.calculateGPTCost(
-					roundThreeResponse.data.usage,
-					roundThreeResponse.data.model
+					roundThreeResponse.usage,
+					roundThreeResponse.model
 				);
 
 				// Validate the response from ChatGPT (Round 2)
 				const validatedResponseThree = await this.validateChatGPTResponse(
-					roundThreeResponse.data.choices[0].message.content
+					roundThreeResponse.choices[0].message.content
 				);
 
 				console.log("Round Three Validated.");
@@ -723,7 +723,7 @@ export default defineComponent({
 					start_timestamp: startTimestamp,
 					validated_body: validatedBody,
 					cost: roundOneCost + roundTwoCost + roundThreeCost,
-					model: roundOneResponse.data.model,
+					model: roundOneResponse.model,
 					validated_response_1: validatedResponseOne,
 					validated_response_2: validatedResponseTwo,
 					detected_projects_response: detectedProjects,
@@ -1114,7 +1114,7 @@ export default defineComponent({
 								input: message,
 							});
 	
-							const flagged = response.data.results[0].flagged;
+							const flagged = response.results[0].flagged;
 	
 							if (flagged === undefined || flagged === null) {
 								const error = new Error("Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed.");
