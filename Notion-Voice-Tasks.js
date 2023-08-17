@@ -1,7 +1,7 @@
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import { encode } from "gpt-3-encoder";
 import Joi from "joi";
 import validator from "validator";
@@ -161,12 +161,10 @@ export default defineComponent({
 		if (this.openai) {
 			try {
 				// Initialize OpenAI
-				const configuration = new Configuration({
+				const openai = new OpenAI({
 					apiKey: this.openai.$auth.api_key,
 				});
-
-				const openai = new OpenAIApi(configuration);
-				const response = await openai.listModels();
+				const response = await openai.models.list();
 
 				results = response.data.data.filter(
 					(model) =>
@@ -593,13 +591,8 @@ export default defineComponent({
 			// Validate the user's input
 			const validatedBody = await this.validateUserInput(steps.trigger.event.body);
 
-			// Initialize OpenAI
-			const configuration = new Configuration({
-				apiKey: this.openai.$auth.api_key,
-			});
-
 			// Run the moderation check
-			await this.moderationCheck(JSON.stringify(validatedBody), configuration);
+			await this.moderationCheck(JSON.stringify(validatedBody));
 
 			// Set the user's name
 			config.system_messages.user_name = validatedBody.name;
@@ -845,7 +838,9 @@ export default defineComponent({
 			const maxTokens = config.maxtokens;
 
 			// Initialize the openai object
-			const openai = new OpenAIApi(configuration);
+			const openai = new OpenAI({
+				apiKey: this.openai.$auth.api_key,
+			});
 
 			// Check the number of tokens in the task
 			const tokens = encode(rounds[roundNum]);
@@ -860,7 +855,7 @@ export default defineComponent({
 					async (bail, number) => {
 						console.log(`Attempt number ${number} to send prompt to OpenAI.`);
 						try {
-							const response = await openai.createChatCompletion({
+							const response = await openai.chat.completions.create({
 								model: config.model,
 								messages: [
 									{ role: "system", content: systemMessage },
@@ -1099,21 +1094,23 @@ export default defineComponent({
 				}
 			}
 		},
-		async moderationCheck(message, configuration) {
+		async moderationCheck(message) {
 			if (!message) {
 				const error = new Error("Message cannot be empty or null.");
 				await this.createFallbackTask(error, true, "chatgpt")
 			}
 
 			// Initialize the openai object
-			const openai = new OpenAIApi(configuration);
+			const openai = new OpenAI({
+				apiKey: this.openai.$auth.api_key,
+			});
 
 			try {
 				return retry(
 					async (bail, number) => {
 						console.log(`Moderation attempt number: ${number}`);
 						try {
-							const response = await openai.createModeration({
+							const response = await openai.moderations.create({
 								input: message,
 							});
 	
