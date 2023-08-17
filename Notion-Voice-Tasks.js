@@ -1,9 +1,3 @@
-/**
- * To Do
- * - Make "Kanban Status" the first choice
- * - Make "Priority" the first choice
- */
-
 import { Client } from "@notionhq/client";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
@@ -85,16 +79,17 @@ export default defineComponent({
 		databaseID: {
 			type: "string",
 			label: "Tasks Database",
-			description: "Select your tasks database. *If you don't see your database here, try waiting 1-2 minutes and then refreshing the page. If that doesn't work, [please read this FAQ section](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#missing-database).*",
+			description:
+				"Select your tasks database. *If you don't see your database here, try waiting 1-2 minutes and then refreshing the page. If that doesn't work, [please read this FAQ section](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#missing-database).*",
 			async options({ query, prevContext }) {
 				if (this.notion) {
 					try {
 						const notion = new Client({
 							auth: this.notion.$auth.oauth_access_token,
 						});
-			
+
 						let start_cursor = prevContext?.cursor;
-			
+
 						const response = await notion.search({
 							...(query ? { query } : {}),
 							...(start_cursor ? { start_cursor } : {}),
@@ -110,7 +105,7 @@ export default defineComponent({
 								},
 							],
 						});
-			
+
 						let allTasksDbs = response.results.filter((db) =>
 							db.title?.[0]?.plain_text.includes("All Tasks")
 						);
@@ -130,7 +125,7 @@ export default defineComponent({
 								: db.title?.[0]?.plain_text,
 							value: db.id,
 						}));
-			
+
 						return {
 							context: {
 								cursor: response.next_cursor,
@@ -149,7 +144,7 @@ export default defineComponent({
 				} else {
 					return {
 						options: ["Please connect your Notion account first."],
-					}
+					};
 				}
 			},
 		},
@@ -179,12 +174,14 @@ export default defineComponent({
 						!model.id.endsWith("0314")
 				);
 			} catch (err) {
-				console.error(`Encountered an error with OpenAI: ${err} – Please check that your API key is still valid.`);
+				console.error(
+					`Encountered an error with OpenAI: ${err} – Please check that your API key is still valid.`
+				);
 			}
 		}
 
-		if (!this.databaseID) return {}
-		
+		if (!this.databaseID) return {};
+
 		const notion = new Client({
 			auth: this.notion.$auth.oauth_access_token,
 		});
@@ -372,51 +369,52 @@ export default defineComponent({
 					optional: true,
 				},
 			}),
-			...(this.project && this.advanced_options === true && {
-				fuzzy_search_threshold: {
-					type: "integer",
-					label: "Project-matching Search Score Threshold",
-					description: `The projects named in your input are matched against project pages in the Projects database connected to your ${this.project} Relation property. Fuzzy search is used to match the right project, even if you didn't say the name exactly right. You can adjust this value to make the matching more or less strict. A score of 0 will require an exact match; a score of 100 will match the nearest Project, no matter how different it is. The default is 40, which is generally effective. I typically don't recommend setting the score higher, but you can set it lower if you find that your tasks are getting matched to the wrong projects. It's much better for a task to get NO matched Project (and therefore ideally be sent to your Inbox) than for it to be matched with the wrong project.`,
-					default: 40,
-					optional: true,
-				},
-				database_filter_status: {
-					type: "string",
-					label: `Project Status Filter (for chosen Relation: ${this.project})`,
-					description:
-						'Status or Select property to use as a filter for the Projects database. Once you select a property here, you\'ll get a new field to select the value you want to filter by. For example, you could select a Status-type property here, then select "In Progress" as the value to filter by.',
-					options: projectFilterProps?.status?.map((prop) => ({
-						label: prop,
-						value: prop,
-					})),
-					optional: true,
-					reloadProps: true,
-				},
-				database_filter_checkbox: {
-					type: "string",
-					label: `Project Checkbox Filter (for chosen Relation: ${this.project})`,
-					description:
-						"Checkbox property to use as a filter for the Projects database. Once you select a property here, you'll get a new field to select the value you want to filter by. For example, you could select a Checkbox-type property here, then select true as the value to filter by.",
-					options: projectFilterProps?.checkbox?.map((prop) => ({
-						label: prop,
-						value: prop,
-					})),
-					optional: true,
-					reloadProps: true,
-				},
-				database_filter_date: {
-					type: "string",
-					label: `Project Date Filter (for chosen Relation: ${this.project})`,
-					description:
-						"Date, Created Time, or Last Edited Time property to use as a recency filter for the Projects database. Once you select a property here, you'll get a new field to select a number of days you want to filter by. For example, you could select a Last Edited Time-type property here, then select 7 days as the value to filter by. This would return projects that were last edited within the last 7 days.",
-					options: projectFilterProps?.date?.map((prop) => ({
-						label: prop,
-						value: prop,
-					})),
-					optional: true,
-					reloadProps: true,
-				},
-			}),
+			...(this.project &&
+				this.advanced_options === true && {
+					fuzzy_search_threshold: {
+						type: "integer",
+						label: "Project-matching Search Score Threshold",
+						description: `The projects named in your input are matched against project pages in the Projects database connected to your ${this.project} Relation property. Fuzzy search is used to match the right project, even if you didn't say the name exactly right. You can adjust this value to make the matching more or less strict. A score of 0 will require an exact match; a score of 100 will match the nearest Project, no matter how different it is. The default is 40, which is generally effective. I typically don't recommend setting the score higher, but you can set it lower if you find that your tasks are getting matched to the wrong projects. It's much better for a task to get NO matched Project (and therefore ideally be sent to your Inbox) than for it to be matched with the wrong project.`,
+						default: 40,
+						optional: true,
+					},
+					database_filter_status: {
+						type: "string",
+						label: `Project Status Filter (for chosen Relation: ${this.project})`,
+						description:
+							'Status or Select property to use as a filter for the Projects database. Once you select a property here, you\'ll get a new field to select the value you want to filter by. For example, you could select a Status-type property here, then select "In Progress" as the value to filter by.',
+						options: projectFilterProps?.status?.map((prop) => ({
+							label: prop,
+							value: prop,
+						})),
+						optional: true,
+						reloadProps: true,
+					},
+					database_filter_checkbox: {
+						type: "string",
+						label: `Project Checkbox Filter (for chosen Relation: ${this.project})`,
+						description:
+							"Checkbox property to use as a filter for the Projects database. Once you select a property here, you'll get a new field to select the value you want to filter by. For example, you could select a Checkbox-type property here, then select true as the value to filter by.",
+						options: projectFilterProps?.checkbox?.map((prop) => ({
+							label: prop,
+							value: prop,
+						})),
+						optional: true,
+						reloadProps: true,
+					},
+					database_filter_date: {
+						type: "string",
+						label: `Project Date Filter (for chosen Relation: ${this.project})`,
+						description:
+							"Date, Created Time, or Last Edited Time property to use as a recency filter for the Projects database. Once you select a property here, you'll get a new field to select a number of days you want to filter by. For example, you could select a Last Edited Time-type property here, then select 7 days as the value to filter by. This would return projects that were last edited within the last 7 days.",
+						options: projectFilterProps?.date?.map((prop) => ({
+							label: prop,
+							value: prop,
+						})),
+						optional: true,
+						reloadProps: true,
+					},
+				}),
 			...(this.status && {
 				status_value: {
 					type: "string",
@@ -444,12 +442,18 @@ export default defineComponent({
 					options: this.kanban_status
 						? properties[this.kanban_status][
 								properties[this.kanban_status]?.type
-						  ].options.map((option) => ({
-								label: option.name,
-								value: option.name,
-						  }))
+						  ].options
+								.map((option) => ({
+									label: option.name,
+									value: option.name,
+								}))
+								.sort((a, b) => {
+									if (a.label === "Kanban Status") return -1;
+									if (b.label === "Kanban Status") return 1;
+									return 0;
+								})
 						: [],
-					optional: this.kanban_status && kanbanFlag ? false : true,
+					optional: kanbanFlag ? false : true,
 				},
 			}),
 			...(this.priority && {
@@ -462,14 +466,18 @@ export default defineComponent({
 						priorityFlag ? requiredString + "." : "."
 					}`,
 					options: this.priority
-						? properties[this.priority][
-								properties[this.priority]?.type
-						  ].options.map((option) => ({
-								label: option.name,
-								value: option.name,
-						  }))
+						? properties[this.priority][properties[this.priority]?.type].options
+								.map((option) => ({
+									label: option.name,
+									value: option.name,
+								}))
+								.sort((a, b) => {
+									if (a.label === "Priorty") return -1;
+									if (b.label === "Priority") return 1;
+									return 0;
+								})
 						: [],
-					optional: this.priority && priorityFlag ? false : true,
+					optional: priorityFlag ? false : true,
 				},
 			}),
 			...(this.smart_list && {
@@ -535,15 +543,16 @@ export default defineComponent({
 					optional: true,
 				},
 			}),
-			...(this.openai && this.advanced_options === true && {
-				send_response: {
-					type: "boolean",
-					label: "Send Response on Completion?",
-					description: `Set this to **true** if you would like to receive a response on your device when this workflow successfully completes.\n\nThe response will tell you:\n* How many tasks were created\n* How long the operation took\n* How much the operation cost\n\n**Note:** In the case of an error, this workflow will send you an email with both the task details you spoke into your phone and the error details.\n\nFor certain errors, a fallback routine will send a single task to Notion containing everything you said as well.\n\nFor this reason, you can set this to **false** to simply send a generic response right away, which will help the workflow feel faster to use (especially since ChatGPT can often take 20-30 seconds to fully process all operations).`,
-					default: false,
-					optional: true,
-				},
-			}),
+			...(this.openai &&
+				this.advanced_options === true && {
+					send_response: {
+						type: "boolean",
+						label: "Send Response on Completion?",
+						description: `Set this to **true** if you would like to receive a response on your device when this workflow successfully completes.\n\nThe response will tell you:\n* How many tasks were created\n* How long the operation took\n* How much the operation cost\n\n**Note:** In the case of an error, this workflow will send you an email with both the task details you spoke into your phone and the error details.\n\nFor certain errors, a fallback routine will send a single task to Notion containing everything you said as well.\n\nFor this reason, you can set this to **false** to simply send a generic response right away, which will help the workflow feel faster to use (especially since ChatGPT can often take 20-30 seconds to fully process all operations).`,
+						default: false,
+						optional: true,
+					},
+				}),
 			...(this.advanced_options === true && {
 				remove_midnight: {
 					type: "boolean",
@@ -551,29 +560,30 @@ export default defineComponent({
 					description: `Set this to **true** if you would like to remove the due time from tasks that have a due time of midnight (00:00).\n\nThe ChatGPT system instructions have been written so that tasks without a due time should not have one in the due date property, but sometimes ChatGPT ignores this instruction and applies a due time of 00:00.\n\nBy enabling this feature, that 00:00 due time will be stripped out before your task is sent to Notion.`,
 					default: false,
 					optional: true,
-				}
-			}),
-			...(this.openai && this.advanced_options === true && {
-				update_system: {
-					type: "string",
-					label: "System Message Source",
-					description:
-						`Set to **Auto-Update** if you want the your workflow to fetch the latest versions of the system messages (instructions for ChatGPT) I've written.\n\nSystem messages tell the model how to behave and how to handle the user's prompt.\n\nThis setting allows for using updated system messages in the event that better ones are discovered or bugs are discovered in the hard-coded ones (without you having to recreate the entire workflow).\n\n[You can read the system messages here](https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/).\n\nIf this is set to **Hard-Coded**, or if the request to that URL fails/takes more than 2 seconds, the script will fall back to the system message that are hard-coded into this workflow.\n\nIf you would like to use your own system messages, select **Write Your Own (Advanced)** and then add your custom URL to the **System Message URL** property below. [Read the full instructions on this use case here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#custom-system)`,
-					options: ["Auto-Update", "Hard-Coded", "Write Your Own (Advanced)"],
-					optional: true,
-					default: "Auto-Update",
-					reloadProps: true,
 				},
 			}),
+			...(this.openai &&
+				this.advanced_options === true && {
+					update_system: {
+						type: "string",
+						label: "System Message Source",
+						description: `Set to **Auto-Update** if you want the your workflow to fetch the latest versions of the system messages (instructions for ChatGPT) I've written.\n\nSystem messages tell the model how to behave and how to handle the user's prompt.\n\nThis setting allows for using updated system messages in the event that better ones are discovered or bugs are discovered in the hard-coded ones (without you having to recreate the entire workflow).\n\n[You can read the system messages here](https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/).\n\nIf this is set to **Hard-Coded**, or if the request to that URL fails/takes more than 2 seconds, the script will fall back to the system message that are hard-coded into this workflow.\n\nIf you would like to use your own system messages, select **Write Your Own (Advanced)** and then add your custom URL to the **System Message URL** property below. [Read the full instructions on this use case here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#custom-system)`,
+						options: ["Auto-Update", "Hard-Coded", "Write Your Own (Advanced)"],
+						optional: true,
+						default: "Auto-Update",
+						reloadProps: true,
+					},
+				}),
 			...(this.update_system === "Write Your Own (Advanced)" && {
 				system_message_url: {
 					type: "string",
 					label: "System Message URL",
 					description: `The URL where your custom system messages are hosted.\n\n*Writing your own system messages is an advanced use case, is not recommended for most users, and will not be supported in any way. If you do write your own system messages, you should [copy mine](https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/) and make minor adjustments.The system messages must be a JSON object with a particular structure, and large changes will likely break this workflow.*`,
 					optional: true,
-					default: "https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/",
-				}
-			})
+					default:
+						"https://thomasjfrank.com/mothership-pipedream-notion-voice-tasks/",
+				},
+			}),
 		};
 
 		return props;
@@ -582,7 +592,7 @@ export default defineComponent({
 		/* ChatGPT-specific methods */
 		async chatGTPHandler(steps) {
 			/* This method handles all ChatGPT operations, calling other methods as needed. */
-			
+
 			// Start the workflow timer
 			const startDate = new Date(steps.trigger.context.ts);
 			const startTimestamp = startDate.getTime();
@@ -595,7 +605,9 @@ export default defineComponent({
 			}
 
 			// Validate the user's input
-			const validatedBody = await this.validateUserInput(steps.trigger.event.body);
+			const validatedBody = await this.validateUserInput(
+				steps.trigger.event.body
+			);
 
 			// Run the moderation check
 			await this.moderationCheck(JSON.stringify(validatedBody));
@@ -612,7 +624,6 @@ export default defineComponent({
 				// Send the validated input to ChatGPT
 				const gpt4Response = await this.parseTaskWithGPT(
 					validatedBody,
-					configuration,
 					await config.system_messages.gpt4_system(),
 					3,
 					validatedBody.task
@@ -653,7 +664,6 @@ export default defineComponent({
 				// Send the validated input to ChatGPT (Round 1)
 				const roundOneResponse = await this.parseTaskWithGPT(
 					validatedBody,
-					configuration,
 					await config.system_messages.round_1(),
 					1
 				);
@@ -675,7 +685,6 @@ export default defineComponent({
 				// Send the validated response to ChatGPT (Round 2)
 				const roundTwoResponse = await this.parseTaskWithGPT(
 					validatedBody,
-					configuration,
 					await config.system_messages.round_2(),
 					2,
 					JSON.stringify(validatedResponseOne)
@@ -700,7 +709,6 @@ export default defineComponent({
 				// Send the validated response to ChatGPT (Round 3)
 				const roundThreeResponse = await this.parseTaskWithGPT(
 					validatedBody,
-					configuration,
 					await config.system_messages.round_3(),
 					3,
 					JSON.stringify(detectedProjects)
@@ -748,8 +756,11 @@ export default defineComponent({
 		async validateUserInput(data) {
 			// Check the secret key to ensure the request came from the correct sender
 			if (!data.secret || data.secret !== this.secretKey) {
-				const error = new Error("Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " + data.secret);
-				await this.createFallbackTask(error, true, "config")
+				const error = new Error(
+					"Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " +
+						data.secret
+				);
+				await this.createFallbackTask(error, true, "config");
 			}
 
 			// Define the Joi schema for each property in the data
@@ -789,8 +800,10 @@ export default defineComponent({
 			// Construct the date object and check its validity
 			const dateObject = validator.escape(data.date);
 			if (!dayjs(dateObject).isValid()) {
-				const error = new Error(`Invalid date format. Date object currently is formatted as: ${dateObject}. Please use ISO 8601 format.`);
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					`Invalid date format. Date object currently is formatted as: ${dateObject}. Please use ISO 8601 format.`
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			// Construct the data object
@@ -808,23 +821,17 @@ export default defineComponent({
 			// If there is an error, return the error message
 			if (error) {
 				const joiError = new Error(`Joi error: ${error}`);
-				await this.createFallbackTask(joiError, true, "chatgpt")
+				await this.createFallbackTask(joiError, true, "chatgpt");
 			}
 
 			// Log the value
-			console.log("Validated Joi Object")
+			console.log("Validated Joi Object");
 			console.log(value);
 
 			// If there is no error, return the validated data
 			return value;
 		},
-		async parseTaskWithGPT(
-			inputJSON,
-			configuration,
-			systemMessage,
-			round,
-			chatMessage
-		) {
+		async parseTaskWithGPT(inputJSON, systemMessage, round, chatMessage) {
 			let roundNum;
 			// Convert the round number if needed
 			if (typeof round === "number") {
@@ -851,8 +858,10 @@ export default defineComponent({
 			// Check the number of tokens in the task
 			const tokens = encode(rounds[roundNum]);
 			if (tokens.length > maxTokens) {
-				const error = new Error(`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`);
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					`Task is too long. Max tokens: ${maxTokens}. Task tokens: ${tokens.length}`
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			// Send the task prompt and system message to OpenAI
@@ -872,7 +881,7 @@ export default defineComponent({
 								],
 								temperature: 0,
 							});
-	
+
 							// Return the response
 							return response;
 						} catch (error) {
@@ -883,7 +892,7 @@ export default defineComponent({
 									`Response data: ${JSON.stringify(error.response.data)}`
 								);
 							}
-	
+
 							// If it's not a 5xx error, don't retry
 							if (
 								!error.response ||
@@ -892,7 +901,7 @@ export default defineComponent({
 							) {
 								bail(error);
 							}
-	
+
 							// If it's a 5xx error, throw it again to trigger a retry
 							throw error;
 						}
@@ -905,7 +914,7 @@ export default defineComponent({
 				);
 			} catch (err) {
 				const error = new Error(`Error sending prompt to OpenAI: ${err}`);
-				await this.createFallbackTask(error, true, "chatgpt")
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 		},
 		async calculateGPTCost(usage, model) {
@@ -915,13 +924,17 @@ export default defineComponent({
 				!usage.prompt_tokens ||
 				!usage.completion_tokens
 			) {
-				const error = new Error("Invalid usage object (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					"Invalid usage object (thrown from calculateGPTCost)."
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			if (!model || typeof model !== "string") {
-				const error = new Error("Invalid model string (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					"Invalid model string (thrown from calculateGPTCost)."
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			const rates = {
@@ -952,8 +965,10 @@ export default defineComponent({
 				: "gpt-3.5-turbo";
 
 			if (!rates[chatModel]) {
-				const error = new Error("Non-supported model. (thrown from calculateGPTCost).")
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					"Non-supported model. (thrown from calculateGPTCost)."
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			const costs = {
@@ -983,8 +998,8 @@ export default defineComponent({
 					responseArray = JSON.parse(repairedJSON);
 				} catch {
 					// If the response is not valid JSON after repair, throw an error
-					const error = new Error("Invalid JSON response from ChatGPT.")
-					await this.createFallbackTask(error, true, "chatgpt")
+					const error = new Error("Invalid JSON response from ChatGPT.");
+					await this.createFallbackTask(error, true, "chatgpt");
 				}
 			}
 
@@ -1013,8 +1028,10 @@ export default defineComponent({
 
 			// If no JSON object or array is found, throw an error
 			if (beginningIndex == Infinity || endingIndex == -1) {
-				const error = new Error("No JSON object or array found (in repairJSON).")
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					"No JSON object or array found (in repairJSON)."
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			try {
@@ -1026,8 +1043,8 @@ export default defineComponent({
 				// Return the repaired JSON string
 				return JSONString;
 			} catch (error) {
-				const jsonRepairError = new Error(`JSON repair error: ${error}`)
-				await this.createFallbackTask(jsonRepairError, true, "chatgpt")
+				const jsonRepairError = new Error(`JSON repair error: ${error}`);
+				await this.createFallbackTask(jsonRepairError, true, "chatgpt");
 			}
 		},
 		refineTasks(tasks) {
@@ -1103,7 +1120,7 @@ export default defineComponent({
 		async moderationCheck(message) {
 			if (!message) {
 				const error = new Error("Message cannot be empty or null.");
-				await this.createFallbackTask(error, true, "chatgpt")
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 
 			// Initialize the openai object
@@ -1119,17 +1136,21 @@ export default defineComponent({
 							const response = await openai.moderations.create({
 								input: message,
 							});
-	
+
 							const flagged = response.results[0].flagged;
-	
+
 							if (flagged === undefined || flagged === null) {
-								const error = new Error("Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed.");
-								await this.createFallbackTask(error, true, "chatgpt")
+								const error = new Error(
+									"Moderation check failed. Request to OpenAI's Moderation endpoint could not be completed."
+								);
+								await this.createFallbackTask(error, true, "chatgpt");
 							}
-	
+
 							if (flagged === true) {
-								const error = new Error("Detected inappropriate content in the prompt.");
-								await this.createFallbackTask(error, true, "chatgpt")
+								const error = new Error(
+									"Detected inappropriate content in the prompt."
+								);
+								await this.createFallbackTask(error, true, "chatgpt");
 							} else {
 								console.log("Prompt passed moderation check.");
 							}
@@ -1141,7 +1162,7 @@ export default defineComponent({
 									`Response data: ${JSON.stringify(error.response.data)}`
 								);
 							}
-	
+
 							if (
 								!error.response ||
 								error.response.status < 500 ||
@@ -1149,7 +1170,7 @@ export default defineComponent({
 							) {
 								bail(error);
 							}
-	
+
 							throw error;
 						}
 					},
@@ -1160,8 +1181,10 @@ export default defineComponent({
 					}
 				);
 			} catch (err) {
-				const error = new Error(`Error sending moderation check to OpenAI: ${err}`);
-				await this.createFallbackTask(error, true, "chatgpt")
+				const error = new Error(
+					`Error sending moderation check to OpenAI: ${err}`
+				);
+				await this.createFallbackTask(error, true, "chatgpt");
 			}
 		},
 		/* Start of Notion-specific methods */
@@ -1238,8 +1261,8 @@ export default defineComponent({
 		},
 		async getClosestNotionMatch(inputJSON, notion) {
 			if (typeof inputJSON !== "object" || inputJSON === null) {
-				const error = new Error("Invalid JSON input.")
-				await this.createFallbackTask(error, true, "notion")
+				const error = new Error("Invalid JSON input.");
+				await this.createFallbackTask(error, true, "notion");
 			}
 
 			const taskArray = [];
@@ -1305,8 +1328,10 @@ export default defineComponent({
 					};
 					choiceArray.push(choiceObj);
 				} catch (err) {
-					const error = new Error(`Error creating item in choice array. This error occured when trying to find a match in Notion for ${val}.\n\nFull error details:\n\n${err}`);
-					await this.createFallbackTask(error, false, "notion")
+					const error = new Error(
+						`Error creating item in choice array. This error occured when trying to find a match in Notion for ${val}.\n\nFull error details:\n\n${err}`
+					);
+					await this.createFallbackTask(error, false, "notion");
 				}
 			}
 
@@ -1354,15 +1379,17 @@ export default defineComponent({
 					await retry(
 						async (bail) => {
 							let resp;
-	
+
 							let params = {
 								page_size: 100,
 								start_cursor: token,
 							};
-	
+
 							try {
 								if (type === "assignee") {
-									resp = await limiter.schedule(() => notion.users.list(params));
+									resp = await limiter.schedule(() =>
+										notion.users.list(params)
+									);
 									rows.push(resp.results);
 								} else {
 									params = {
@@ -1379,7 +1406,7 @@ export default defineComponent({
 									);
 									rows.push(resp.results);
 								}
-	
+
 								hasMore = resp.has_more;
 								if (resp.next_cursor) {
 									token = resp.next_cursor;
@@ -1390,7 +1417,7 @@ export default defineComponent({
 									bail(error);
 									return;
 								}
-	
+
 								if (
 									error.status === 500 ||
 									error.status === 503 ||
@@ -1399,7 +1426,7 @@ export default defineComponent({
 									// Retry on 500, 503, and 504
 									throw error;
 								}
-	
+
 								// Don't retry for other errors
 								bail(error);
 							}
@@ -1412,8 +1439,10 @@ export default defineComponent({
 						}
 					);
 				} catch (err) {
-					const error = new Error(`Error querying Notion to fetch ${type}. Creating fallback task.\n\nFull error details:\n\n${err}`);
-					await this.createFallbackTask(error)
+					const error = new Error(
+						`Error querying Notion to fetch ${type}. Creating fallback task.\n\nFull error details:\n\n${err}`
+					);
+					await this.createFallbackTask(error);
 				}
 			}
 
@@ -1531,19 +1560,18 @@ export default defineComponent({
 			if (this.remove_midnight === true && result.due) {
 				const pattern = /T00:00:00(\.\d+)?[+-]\d{2}:\d{2}$/;
 				if (pattern.test(result.due)) {
-					console.log('Midnight time part removed from result.due');
-					result.due = result.due.replace(pattern, '');
+					console.log("Midnight time part removed from result.due");
+					result.due = result.due.replace(pattern, "");
 				}
 			}
 
 			if (this.remove_midnight === true && result.due_end) {
 				const pattern = /T00:00:00(\.\d+)?[+-]\d{2}:\d{2}$/;
-  				if (pattern.test(result.due_end)) {
-					console.log('Midnight time part removed from result.due_end');
-					result.due_end = result.due_end.replace(pattern, '');
+				if (pattern.test(result.due_end)) {
+					console.log("Midnight time part removed from result.due_end");
+					result.due_end = result.due_end.replace(pattern, "");
 				}
 			}
-
 
 			return {
 				parent: {
@@ -1768,7 +1796,7 @@ export default defineComponent({
 				return results;
 			} catch (err) {
 				const error = new Error(`Error creating task in Notion: ${err}`);
-				await this.createFallbackTask(error, true, "notion")
+				await this.createFallbackTask(error, true, "notion");
 			}
 		},
 		async sendResponse($, taskNum, startTime, cost) {
@@ -1806,13 +1834,32 @@ export default defineComponent({
 					const error = new Error(
 						`Missing property "${prop}" in request body.`
 					);
-					await this.createFallbackTask(error, true, "config")
+					await this.createFallbackTask(error, true, "config");
 				}
 			}
 
 			if (config.original_body.secret !== this.secretKey) {
-				const error = new Error("Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " + config.original_body.secret);
-				await this.createFallbackTask(error, true, "config")
+				const error = new Error(
+					"Secret key in the request does not match the key configured in the workflow settings. The secret key used in this request was: " +
+						config.original_body.secret
+				);
+				await this.createFallbackTask(error, true, "config");
+			}
+
+			if (this.kanban_status) {
+				if (this.kanban_status_value.length < 1) {
+					throw new Error(
+						`Kanban Status Value property must have a value selected. If you don't see this property in the Configuration tab, please hit the Refresh Fields button.`
+					);
+				}
+			}
+
+			if (this.priority) {
+				if (this.priority_value.length < 1) {
+					throw new Error(
+						`Priority Value property must have a value selected. If you don't see this property in the Configuration tab, please hit the Refresh Fields button.`
+					);
+				}
 			}
 
 			// Send the user a warning email if the task text was over 750 chars
@@ -1825,14 +1872,20 @@ export default defineComponent({
 			}
 		},
 		async createFallbackTask(error, terminate = true, source = "notion") {
-			const $ = config.pipedream
-			
+			const $ = config.pipedream;
+
 			if (source === "chatgpt") {
-				console.log("ChatGPT failed to parse the user's request. Creating a fallback task in Notion and emailing the user...");
+				console.log(
+					"ChatGPT failed to parse the user's request. Creating a fallback task in Notion and emailing the user..."
+				);
 			} else if (source === "notion") {
-				console.log("Failed to create the task(s) in Notion. Sending error email to user...");
+				console.log(
+					"Failed to create the task(s) in Notion. Sending error email to user..."
+				);
 			} else if (source === "config") {
-				console.log("A configuration error occured. Sending error email to user...")
+				console.log(
+					"A configuration error occured. Sending error email to user..."
+				);
 			} else {
 				console.log("An error occurred. Sending error email to user...");
 			}
@@ -1840,37 +1893,43 @@ export default defineComponent({
 			const task = {
 				task: `[CHATGPT FAILED TO PARSE]: ${config.original_body.task}`,
 				full_text: `${config.original_body.task} – (Task created by ${config.original_body.name} on ${config.original_body.date}.)`,
-			}
+			};
 
 			const error_details = {
 				chatgpt: {
 					subject: `[Notion Voice Tasks] – ChatGPT Error`,
 					body() {
-						return `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${this.task_url}.\n\nThe full error message is:\n\n${error}`
+						return `ChatGPT failed to process a request made via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nYou can access the task that was created in Notion at ${this.task_url}.\n\nThe full error message is:\n\n${error}`;
 					},
-					http_response: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`
+					http_response: `Partial failure. ChatGPT encountered an error, so one task was created in Notion containing all the details of your request as a fallback, and an email with more detials was sent to your Pipedream account's email address. The full task text is: ${config.original_body.task}`,
 				},
 				notion: {
 					subject: `[Notion Voice Tasks] – Notion Error`,
 					body() {
-						return `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`
+						return `Failed to create task(s) in Notion from a request via your Notion Voice Tasks workflow, sent by ${config.original_body.name} at ${config.original_body.date}.\n\nThe full text of your request is:\n\n${config.original_body.task}\n\nThe full error message is:\n\n${error}`;
 					},
-					http_response: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`
+					http_response: `Failed to create task(s) in Notion due to an error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`,
 				},
 				config: {
 					subject: `[Notion Voice Tasks] – Configuration Error`,
 					body() {
-						return `A configuration error occured in your Notion Voice Tasks workflow. The error message is:\n\n${error}`
+						return `A configuration error occured in your Notion Voice Tasks workflow. The error message is:\n\n${error}`;
 					},
-					http_response: `Failed to create task(s) in Notion due to a configuration error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`
-				}
-			}
+					http_response: `Failed to create task(s) in Notion due to a configuration error. An email with details of the error has been sent to your Pipedream account's email address. The full text of your task request is: ${config.original_body.task}`,
+				},
+			};
 
 			if (source === "Notion") {
-				const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
+				const notion = new Client({
+					auth: this.notion.$auth.oauth_access_token,
+				});
 
-				console.log("Creating a Notion-compliant task object...")
-				const notionObject = this.creatNotionObject(task, 0, "Error Fallback Routine");
+				console.log("Creating a Notion-compliant task object...");
+				const notionObject = this.creatNotionObject(
+					task,
+					0,
+					"Error Fallback Routine"
+				);
 
 				const taskArray = [notionObject];
 
@@ -1878,14 +1937,17 @@ export default defineComponent({
 				const response = await this.createTasks(taskArray, notion);
 
 				const taskID = response[0].id;
-				error_details.chatgpt.task_url = `https://notion.so/${taskID.replace(/-/g, "")}`;
+				error_details.chatgpt.task_url = `https://notion.so/${taskID.replace(
+					/-/g,
+					""
+				)}`;
 			}
 
 			console.log("Sending an email to the user with error details...");
 			$.send.email({
 				subject: error_details[source].subject,
 				text: error_details[source].body(),
-			})
+			});
 
 			console.log("Sending an HTTP response to the user...");
 			await $.respond({
@@ -1896,24 +1958,23 @@ export default defineComponent({
 
 			if (terminate === true) {
 				console.log("Ending the workflow and throwing an error...");
-				throw new Error(error)
+				throw new Error(error);
 			} else {
-				console.error("Non-workflow-ending error:", error)
+				console.error("Non-workflow-ending error:", error);
 			}
-
 		},
 	},
 	async run({ steps, $ }) {
 		if (!this.send_response || this.send_response === false) {
 			await this.sendResponse($);
 		}
-		
+
 		// Add the original body to the config (used as a fallback if ChatGPT fails)
 		config.original_body = steps.trigger.event.body;
-		
+
 		// Add the pipedream object to the config
 		config.pipedream = $;
-		
+
 		// Check the request body for all required properties
 		await this.checkBody();
 
@@ -1921,57 +1982,13 @@ export default defineComponent({
 		const notion = new Client({ auth: this.notion.$auth.oauth_access_token });
 
 		// Fetch the Tasks database
-		let database
+		let database;
 		try {
-			database = await retry((bail) => {
-				try {
-					const response = notion.databases.retrieve({
-						database_id: this.databaseID,
-					});
-
-					return response;
-				} catch (error) {
-					if (400 <= error.status && error.status <= 409) {
-						// Don't retry for errors 400-409
-						bail(error);
-					} else {
-						throw error;
-					}
-				}
-			},
-			{
-				retries: 2,
-			})
-		} catch (err) {
-			const error = new Error(`Error retrieving Notion Tasks database: ${err}`);
-			await this.sendErrorMessages(error)
-		}
-
-		// Get the Tasks database properties
-		let properties
-		try {
-			if (database.hasOwnProperty("properties")) {
-				properties = database.properties;
-			} else {
-				throw new Error("Database properties not found.")
-			}
-		} catch (err) {
-			const error = new Error(`Error retrieving Notion Tasks database properties: ${err}`);
-			await this.sendErrorMessages(error)
-		}
-
-		// Update the config with the Tasks database ID and properties
-		config.notion_dbs.tasks.id = this.databaseID;
-		config.notion_dbs.tasks.properties = properties;
-
-		// Update the config with Project database properties if the project database is set
-		if (this.project) {
-			let projectsDatabase
-			try {
-				projectsDatabase = await retry((bail) => {
+			database = await retry(
+				(bail) => {
 					try {
 						const response = notion.databases.retrieve({
-							database_id: properties[this.project].relation.database_id,
+							database_id: this.databaseID,
 						});
 
 						return response;
@@ -1986,23 +2003,78 @@ export default defineComponent({
 				},
 				{
 					retries: 2,
-				})
+				}
+			);
+		} catch (err) {
+			const error = new Error(`Error retrieving Notion Tasks database: ${err}`);
+			await this.sendErrorMessages(error);
+		}
+
+		// Get the Tasks database properties
+		let properties;
+		try {
+			if (database.hasOwnProperty("properties")) {
+				properties = database.properties;
+			} else {
+				throw new Error("Database properties not found.");
+			}
+		} catch (err) {
+			const error = new Error(
+				`Error retrieving Notion Tasks database properties: ${err}`
+			);
+			await this.sendErrorMessages(error);
+		}
+
+		// Update the config with the Tasks database ID and properties
+		config.notion_dbs.tasks.id = this.databaseID;
+		config.notion_dbs.tasks.properties = properties;
+
+		// Update the config with Project database properties if the project database is set
+		if (this.project) {
+			let projectsDatabase;
+			try {
+				projectsDatabase = await retry(
+					(bail) => {
+						try {
+							const response = notion.databases.retrieve({
+								database_id: properties[this.project].relation.database_id,
+							});
+
+							return response;
+						} catch (error) {
+							if (400 <= error.status && error.status <= 409) {
+								// Don't retry for errors 400-409
+								bail(error);
+							} else {
+								throw error;
+							}
+						}
+					},
+					{
+						retries: 2,
+					}
+				);
 			} catch (err) {
-				const error = new Error(`Error retrieving Notion Projects database. Attempting to create tasks without Project assignments. Error details: ${err}`);
-				await this.sendErrorMessages(error, false)
+				const error = new Error(
+					`Error retrieving Notion Projects database. Attempting to create tasks without Project assignments. Error details: ${err}`
+				);
+				await this.sendErrorMessages(error, false);
 			}
 
 			// Add the Project DB's ID and properties to the config object
 			try {
-				config.notion_dbs.projects.id = properties[this.project].relation.database_id;
+				config.notion_dbs.projects.id =
+					properties[this.project].relation.database_id;
 				if (projectsDatabase.hasOwnProperty("properties")) {
 					config.notion_dbs.projects.properties = projectsDatabase.properties;
 				} else {
-					throw new Error("Project database properties not found.")
+					throw new Error("Project database properties not found.");
 				}
 			} catch (err) {
-				const error = new Error(`Error retrieving Notion Projects database properties. Attempting to create tasks without Project assignments. Error details: ${err}`);
-				await this.sendErrorMessages(error, false)
+				const error = new Error(
+					`Error retrieving Notion Projects database properties. Attempting to create tasks without Project assignments. Error details: ${err}`
+				);
+				await this.sendErrorMessages(error, false);
 			}
 		}
 
@@ -2012,7 +2084,7 @@ export default defineComponent({
 		console.log(JSON.stringify(config, null, 2));
 
 		// Bring in the return value from the ChatGPT step
-		const chatGPT_results = await this.chatGTPHandler(steps)
+		const chatGPT_results = await this.chatGTPHandler(steps);
 
 		// Query Notion for Assignees and Projects
 		const matchedResponse = await this.getClosestNotionMatch(
@@ -2041,7 +2113,7 @@ export default defineComponent({
 		console.log("Formatted Response:");
 		console.log(formattedResponse);
 
-		console.log("Sending tasks to Notion...")
+		console.log("Sending tasks to Notion...");
 
 		// Create the tasks in Notion
 		const notionResponse = await this.createTasks(formattedResponse, notion);
