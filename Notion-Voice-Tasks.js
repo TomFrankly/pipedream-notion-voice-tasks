@@ -69,13 +69,18 @@ export default {
 	description:
 		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
 	key: "notion-voice-tasks",
-	version: "0.0.1",
+	version: "0.0.3",
 	type: "action",
 	props: {
 		openai: {
 			type: "app",
 			app: "openai",
 			description: `⬆ Don\'t forget to connect your OpenAI account! I also recommend setting your [OpenAI Hard Limit](https://platform.openai.com/account/billing/limits) to a lower value, such as $10; you likely don't need it to be the default of $120/mo.\n\n**Note:** If you're currently using OpenAI's free trial credit, you'll need generate a new API key and enter it here once you enter your billing information at OpenAI; once you do that, keys created during your trial period stop working.\n\n## Overview\n\nThis workflow lets you create new tasks in Notion from your phone, **using your voice**. \n\nIt also includes some advanced features:\n\n* You can create multiple tasks in a single voice prompt\n* Relative due dates are supported (e.g. \"by *next Friday*\")\n* You can mention assignees and projects, which the workflow will attempt to intelligently match to existing Notion users and projects\n\n**Need help with this workflow? [Check out the full instructions and FAQ here.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/)**\n\n## Compatibility\n\nThis workflow will work with any Notion database.\n\n### Upgrade Your Notion Experience\n\nWhile this workflow will work with any Notion database, it\'s even better with a template.\n\nFor general productivity use, you\'ll love [Ultimate Brain](https://thomasjfrank.com/brain/) – my all-in-one second brain template for Notion. \n\nUltimate Brain brings tasks, notes, projects, and goals all into one tool. Naturally, it works very well with this workflow.\n\n**Are you a creator?** \n\nMy [Creator\'s Companion](https://thomasjfrank.com/creators-companion/) template includes a ton of features that will help you make better-performing content and optimize your production process. There\'s even a version that includes Ultimate Brain, so you can easily use this workflow to create tasks related to your content.\n\n*P.S. – This free workflow took 3 months to build. If you\'d like to support my work, buying one of my templates is the best way to do so!*\n\n## Instructions\n\n[Click here for the full instructions on setting up this workflow.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#instructions)\n\n### Mobile App Setup\n\nYou can create voice tasks with this workflow on iOS, MacOS, and Android.\n\n* For MacOS and iOS (iPhone, iPad), we\'ll use the **Shortcuts** app. [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#ios)\n* For Android, we\'ll use the **Tasker** app ($3.49 USD, one-time). [Click here to access my shared workflow and instructions.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#android) *At this time, I know of no free app for Android that can handle this workflow.*\n\nOnce you\'ve set up the workflow on your phone, run it once to send a Test Event to this Pipedream workflow.\n\n*Technically, you can also create tasks via any tool that will let you make an HTTP request with a JSON body. [See the full blog post for instructions on this.](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#http-generic)*\n\n## Creating Tasks\n\nWhen creating tasks, you\'ll get the best results when you follow a couple of simple rules:\n\n1. For due dates, say \"by [date]\" or \"due [date]\" at the end your task phrase. *E.G. \"I need to finish planning the team retreat **by Friday**.*\n2. For projects, you must use the word **\"project\"**. *E.G. \"Tony needs to mount the audio foam **for the studio design project** by next Tuesday.*\n\nBeyond that, this workflow is pretty flexible! Note that you can add multiple tasks in a single voice command. Example:\n\n*\"I need to finish my video script by Tuesday and Brian needs to create the environment model in Blender by July 30 and Tony needs to upload the green screen test footage by tomorrow.\"*\n\n## FAQs\n\nBelow you\'ll find links that answer frequently asked questions about this workflow.\n\n* [Cost FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#cost)\n* [Privacy FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#privacy)\n* [Security FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#security)\n* [Code FAQs and GitHub Repo](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#code)\n* [Support FAQs](https://thomasjfrank.com/notion-chatgpt-voice-tasks/#support)\n\n## More Resources\n\n**More automations you may find useful:**\n\n* [Send Voice Note Transcriptions and Summaries to Notion](https://thomasjfrank.com/how-to-transcribe-audio-to-text-with-chatgpt-and-notion/)\n* [Notion to Google Calendar Sync](https://thomasjfrank.com/notion-google-calendar-sync/)\n\n**All My Notion Automations:**\n\n* [Notion Automations Hub](https://thomasjfrank.com/notion-automations/)\n\n**Want to get notified about updates to this workflow (and about new Notion templates, automations, and tutorials)?**\n\n* [Join my Notion Tips newsletter](https://thomasjfrank.com/fundamentals/#get-the-newsletter)`,
+		},
+		steps: {
+			type: "object",
+			label: "Previous Step Data (Set by Default)",
+			description: `This property simply passes data from the previous step(s) in the workflow to this step. It should be pre-filled with a default value of **{{steps}}**, and you shouldn't need to change it.`,
 		},
 		notion: {
 			type: "app",
@@ -1969,11 +1974,14 @@ export default {
 			}
 		},
 	},
-	async run({ steps, $ }) {
+	async run({ $ }) {
 		if (!this.send_response || this.send_response === false) {
 			await this.sendResponse($);
 		}
 
+		// Grab the steps
+		const steps = this.steps
+		
 		// Add the original body to the config (used as a fallback if ChatGPT fails)
 		config.original_body = steps.trigger.event.body;
 
