@@ -64,7 +64,13 @@ const config = {
 	},
 };
 
-export default defineComponent({
+export default {
+	name: "Notion Voice Tasks – Core",
+	description:
+		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
+	key: "notion-voice-tasks",
+	version: "0.0.1",
+	type: "action",
 	props: {
 		openai: {
 			type: "app",
@@ -2133,4 +2139,4 @@ export default defineComponent({
 
 		return notionResponse;
 	},
-});
+};
