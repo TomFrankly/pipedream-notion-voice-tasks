@@ -27,7 +27,7 @@ Examples of tasks with low "due_date_confidence":
   "Organize materials for the Monday workshop."
 ]
 
-Examples of tasks with low "due_date_confidence":
+Examples of tasks with high "due_date_confidence":
 [
   "Prepare slides for my Friday presentation by Wednesday.",
   "Buy groceries for the family get-together before Thursday.",
