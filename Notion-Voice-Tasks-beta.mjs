@@ -10,6 +10,7 @@ import emojiRegex from "emoji-regex";
 import { jsonrepair } from "jsonrepair";
 import axios from "axios";
 import retry from "async-retry";
+import { prompts } from "./prompts/prompt-config.mjs"
 
 const config = {
 	notion_dbs: {
@@ -26,34 +27,34 @@ const config = {
 	system_messages: {
 		user_name: "",
 		async round_1() {
-			const hard_coded = `You are a task separator. Your separate user input into a JSON array of task strings. Do not rewrite user input. Just separate it, looking for words like \"and\", commas, or distinct sentences as separators.\n\nKeep due date references with their original task.\n\nExamples:\n\nInput: I need to prepare slides for Wednesday\'s team meeting by tomorrow.\n\nOutput: [\"I need to prepare slides for Wednesday\'s team meeting by tomorrow.\"]\n\nInput: Today I need to schedule a dentist appointment, and Carl needs to pick up materials for the e-commerce project by tomorrow at 5pm. Also, Linda must finish her report for the sustainability project by next Monday, and I have to prepare for the Wednesday team meeting. Don\'t forget, Paul needs to order new computers for the IT upgrade project by this Friday.\n\n[\"Today I need to schedule a dentist appointment\", \"Carl needs to pick up materials for the e-commerce project by tomorrow at 5pm\", \"Linda must finish her report for the sustainability project by next Monday\", \"I have to prepare for the Wednesday team meeting\", \"Paul needs to order new computers for the IT upgrade project by this Friday.\"]\n\nYou only write JSON. Do not write text that isn\'t valid JSON.`;
+			const hard_coded = prompts.round1;
 
 			if (this.remote !== null && this.remote?.round_1 !== undefined) {
-				return this.remote.round_1.replace("'{user_name}'", this.user_name);
+				return this.remote.round_1.replace("'{user_name}'", config.system_messages.user_name);
 			} else {
 				return hard_coded;
 			}
 		},
 		async round_2() {
-			const hard_coded = `Your are a task analyzer. Your job is to analyze an array of tasks, and for each task, set a due_date_confidence property with a value of either Low or High.\n\nReturn a valid JSON array of task objects, each with task_name and due_date_confidence. task_name should be the exact text of the entire task for each element.\n\ndue_date_confidence should default to Low.\n\nIn order for due_date_confidence to be high, any date-language in the task must by adjescent to language that indicates the task must be done by that date.\n\nIf a task merely references the date of an event, that is not indicative of a due date. The date language must refer to the date by which the task itself has to be done.\n\nExample: \"Buy an outfit for the Friday meeting\" would have low due_date_confidence.\n\nExamples of tasks with low \"due_date_confidence\":\n[\n  \"Prepare slides for my Friday presentation.\",\n  \"Buy groceries for the Saturday family get-together.\",\n  \"Review notes for next Tuesday\'s meeeting.\",\n  \"Get an outfit ready for the Wednesday party.\",\n  \"Organize materials for the Monday workshop.\"\n]\n\nExamples of tasks with low \"due_date_confidence\":\n[\n  \"Prepare slides for my Friday presentation by Wednesday.\",\n  \"Buy groceries for the family get-together before Thursday.\",\n  \"Review notes by Monday evening for the solar car project.\",\n\"Next Friday I need to take the dog to the vet.\",\n  \"Get an outfit ready for the party by Tuesday afternoon.\",\n  \"Organize materials for the workshop, due Sunday at 8pm.\",\n  \"Today I need to sweep out the garage\",\n]\n\nFull example:\n\nUser input:\n[\"I need to buy a cake for the Tuesday party.\", \"Tony needs to buy a new light for the studio redesign project\", \"Tomorrow I need to clean out my car for Friday\'s inspection.\", \"Marissa must order a sunglasses repair kit by next Tuesday\", \"I have to repair my mouse due June 30\", \"Next tuesday I need to make an animation for the Vidcon project\", \"I must drink 8 gallons of coffee for Friday\'s big party\"]\n\nYour expected output:\n[\n  {\n\"task_name\": \"I need to buy a cake for the Tuesday party.\",\n\"due_date_confidence\": \"Low\"\n  },\n  {\n\"task_name\": \"Tony needs to buy a new light for the studio redesign project\",\n\"due_date_confidence\": \"Low\"\n  },\n  {\n\"task_name\": \"Tomorrow I need to clean out my car for Friday\'s inspection.\",\n\"due_date_confidence\": \"High\"\n  },\n  {\n\"task_name\": \"Marissa must order a sunglasses repair kit by next Tuesday\",\n\"due_date_confidence\": \"High\"\n  },\n  {\n\"task_name\": \"I have to repair my mouse due June 30\",\n\"due_date_confidence\": \"High\"\n  },\n  {\n\"task_name\": \"Next tuesday I need to make an animation for the Vidcon project\",\n\"due_date_confidence\": \"High\"\n  },\n  {\n\"task_name\": \"I must drink 8 gallons of coffee for Friday\'s big party\",\n\"due_date_confidence\": \"Low\"\n  }\n]\n\nYou only write JSON. Do not write text that isn\'t JSON.`;
+			const hard_coded = prompts.round2;
 
 			if (this.remote !== null && this.remote?.round_2 !== undefined) {
-				return this.remote.round_2.replace("'{user_name}'", this.user_name);
+				return this.remote.round_2.replace("'{user_name}'", config.system_messages.user_name);
 			} else {
 				return hard_coded;
 			}
 		},
 		async round_3() {
-			const hard_coded = `As a task parser, convert task objects from natural language to JSON. Extract task name, due date (if due_date_confidence is \'High\' or \'Medium\'), assignee, and if contains_project is present, project from each task. Omit missing details.\nKey points:\n\"project\" is separate. If contains_project is present, extract as \"project: <PROJECT_#>\", omit \"project\". Exclude if absent.\nKeep task and project name separate. If a project exists, exclude it from task_name.\nUse ISO 8601 for dates. If due_date_confidence is \'High\' or \'Medium\', extract the date and do not include it in task_name. If no due date, exclude it. Always consider the context of date-related words. If there is a date-related word that isn\'t indicating a due date, keep it in task_name.\nSet assignee for each task. Use \"${this.user_name}\" for self-assignments.\nCapitalize the first word of the task name.\nIn the full_task_details property, include the full task details, including the project name, assignee, and due date. This is the original task string.\nExample:\n\nInput:\nToday is 2023-06-12T21:00:00-06:00.\n[\n{\n\"task_text\": \"Today I need to book a Friday dinner date with Anna\",\n\"due_date_confidence\": \"High\"\n},\n{\n\"task_text\": \"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\",\n\"due_date_confidence\": \"High\",\n\"contains_project\": \"Contains Project\"\n}\n]\n\nOutput:\n\n[\n{\n\"task_name\": \"Book a Friday dinner date with Anna\",\n\"due_date\": \"2023-06-12\",\n\"assignee\": \"${this.user_name}\",\n\"full_task_details\",\"Today I need to book a Friday dinner date with anna\"\n},\n{\n\"task_name\": \"Track the guitars\",\n\"due_date\": \"2023-06-13T17:00:00-06:00\",\n\"assignee\": \"Carl\",\n\"project\": \"Breaking Benjamin tribute\",\n\"full_task_details\",\"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\"\n}\n]\n\nCritical: You only write JSON. Do not write text that isn\'t JSON.`;
+			const hard_coded = prompts.round3;
 
 			if (this.remote !== null && this.remote?.round_3 !== undefined) {
-				return this.remote.round_3.replace("'{user_name}'", this.user_name);
+				return this.remote.round_3.replace("'{user_name}'", config.system_messages.user_name);
 			} else {
 				return hard_coded;
 			}
 		},
 		async gpt4_system() {
-			const hard_coded = `As a task parser, convert task objects from natural language to JSON. Extract task name, due date, assignee, and project from each task (if the word \"project\" is present). Omit missing details.\nKey points:\n\"project\" is separate. If contains_project is present, extract as \"project: <PROJECT_#>\", omit \"project\". Exclude if absent.\nKeep task and project name separate. If a project exists, exclude it from task_name.\nUse ISO 8601 for dates. If you set a due date, do not include it in task_name. If no due date, exclude it. Always consider the context of date-related words. If there is a date-related word that isn\'t indicating a due date, keep it in task_name.\nSet assignee for each task. Use \"${this.user_name}\" for self-assignments.\nCapitalize the first word of the task name.\nIn the full_task_details property, include the full task details, including the project name, assignee, and due date. This is the original task string.\nExample:\n\nInput:\nToday is 2023-06-12T21:00:00-06:00.\n[\n{\n\"task_text\": \"Today I need to book a Friday dinner date with Anna\",\n\"due_date_confidence\": \"High\"\n},\n{\n\"task_text\": \"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\",\n\"due_date_confidence\": \"High\",\n\"contains_project\": \"Contains Project\"\n}\n]\n\nOutput:\n\n[\n{\n\"task_name\": \"Book a Friday dinner date with Anna\",\n\"due_date\": \"2023-06-12\",\n\"assignee\": \"${this.user_name}\",\n\"full_task_details\",\"Today I need to book a Friday dinner date with anna\"\n},\n{\n\"task_name\": \"Track the guitars\",\n\"due_date\": \"2023-06-13T17:00:00-06:00\",\n\"assignee\": \"Carl\",\n\"project\": \"Breaking Benjamin tribute\",\n\"full_task_details\",\"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\"\n}\n]\n\nCritical: You only write JSON. Do not write text that isn\'t JSON.`;
+			const hard_coded = prompts.gpt4;
 
 			if (this.remote !== null && this.remote?.gpt_4 !== undefined) {
 				return this.remote.gpt_4.replace("'{user_name}'", this.user_name);
@@ -68,8 +69,8 @@ export default {
 	name: "Notion Voice Tasks – Core",
 	description:
 		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
-	key: "notion-voice-tasks",
-	version: "0.0.3",
+	key: "notion-voice-tasks-beta",
+	version: "0.0.1",
 	type: "action",
 	props: {
 		openai: {
@@ -117,25 +118,19 @@ export default {
 							],
 						});
 
-						let allTasksDbs = response.results.filter((db) =>
-							db.title?.[0]?.plain_text.includes("All Tasks")
-						);
-						let nonTaskDbs = response.results.filter(
-							(db) => !db.title?.[0]?.plain_text.includes("All Tasks")
-						);
-						let sortedDbs = [...allTasksDbs, ...nonTaskDbs];
-						const UTregex = /All Tasks/;
-						const UTLabel = " – (used for Ultimate Tasks)";
-						const UBregex = /All Tasks \[\w*\]/;
-						const UBLabel = " – (used for Ultimate Brain)";
-						const options = sortedDbs.map((db) => ({
-							label: UBregex.test(db.title?.[0]?.plain_text)
-								? db.title?.[0]?.plain_text + UBLabel
-								: UTregex.test(db.title?.[0]?.plain_text)
-								? db.title?.[0]?.plain_text + UTLabel
-								: db.title?.[0]?.plain_text,
+						let sortedDbs = response.results.sort((a, b) => {
+							const aTitle = a.title?.[0]?.plain_text.toLowerCase() || '';
+							const bTitle = b.title?.[0]?.plain_text.toLowerCase() || '';
+							
+							if (aTitle === 'tasks' || aTitle.includes('tasks')) return -1;
+							if (bTitle === 'tasks' || bTitle.includes('tasks')) return 1;
+							return 0;
+						  });
+						  
+						  const options = sortedDbs.map((db) => ({
+							label: db.title?.[0]?.plain_text,
 							value: db.id,
-						}));
+						  }));
 
 						return {
 							context: {
@@ -179,10 +174,7 @@ export default {
 				const response = await openai.models.list();
 
 				results = response.data.filter(
-					(model) =>
-						model.id.includes("gpt") &&
-						!model.id.endsWith("0301") &&
-						!model.id.endsWith("0314")
+					(model) => model
 				);
 			} catch (err) {
 				console.error(
@@ -203,11 +195,8 @@ export default {
 
 		const properties = database.properties;
 
-		// Check for presence of Kanban Status and/or Priority properties
-		const kanbanFlag = properties.hasOwnProperty("Kanban Status")
-			? true
-			: false;
-		const priorityFlag = properties.hasOwnProperty("Priority") ? true : false;
+		// Check for presence of Priority properties
+		const priorityFlag = properties.hasOwnProperty("Priority") && properties["Priority"].type === "select" ? true : false;
 
 		// Check for the presence of Smart List for UB GTD workflows
 		const smartListFlag = properties.hasOwnProperty("Smart List")
@@ -337,18 +326,6 @@ export default {
 				optional: priorityFlag ? false : true,
 				reloadProps: true,
 			},
-			kanban_status: {
-				type: "string", // MUST be able to switch between select and status
-				label: `Kanban Status${kanbanFlag ? requiredString : ""}`,
-				description: `Select the Kanban Status property${
-					kanbanFlag
-						? requiredString
-						: ". Typically only used by Ultimate Tasks/Ultimate Brain users."
-				}\n\nIf you don't see the Kanban Status Value option come up after selecting a value here, please hit **Refresh Fields** below.`,
-				options: buildOptions(combinedProps, "Kanban Status"),
-				optional: kanbanFlag ? false : true,
-				reloadProps: true,
-			},
 			advanced_options: {
 				type: "boolean",
 				label: "Enable Advanced Options",
@@ -445,26 +422,6 @@ export default {
 						  }))
 						: [],
 					optional: true,
-				},
-			}),
-			...(this.kanban_status && {
-				kanban_status_value: {
-					type: "string",
-					label: `Kanban Status Value${
-						kanbanFlag ? requiredString : ""
-					} – (for chosen property: ${this.kanban_status})`,
-					description: `Choose a value for your Kanban Status property${
-						kanbanFlag ? requiredString + "." : "."
-					}`,
-					options: this.kanban_status
-						? properties[this.kanban_status][
-								properties[this.kanban_status]?.type
-						  ].options.map((option) => ({
-								label: option.name,
-								value: option.name,
-						  }))
-						: [],
-					optional: this.kanban_status && kanbanFlag ? false : true,
 				},
 			}),
 			...(this.priority && {
@@ -625,8 +582,9 @@ export default {
 			// Fetch the system messages
 			await this.fetchPrompts();
 
-			if (config.model.includes("gpt-4")) {
-				console.log("GPT-4 selected. Initiating 1-round task processing.");
+			// TODO: Update this code to reflect o1 model usage.
+			if (config.model.includes("o1")) {
+				console.log("o1 selected. Initiating 1-round task processing.");
 
 				// Send the validated input to ChatGPT
 				const gpt4Response = await this.parseTaskWithGPT(
@@ -1213,13 +1171,6 @@ export default {
 					tasks_status: config.notion_dbs.tasks.properties[this.status],
 				}),
 				...(this.status_value && { tasks_status_value: this.status_value }),
-				...(this.kanban_status && {
-					tasks_kanban_status:
-						config.notion_dbs.tasks.properties[this.kanban_status],
-				}),
-				...(this.kanban_status_value && {
-					tasks_kanban_status_value: this.kanban_status_value,
-				}),
 				...(this.priority && {
 					tasks_priority: config.notion_dbs.tasks.properties[this.priority],
 				}),
@@ -1611,15 +1562,6 @@ export default {
 							},
 						},
 					}),
-					...(config.properties.tasks_kanban_status_value && {
-						// Check for value instead?
-						[config.properties.tasks_kanban_status.name]: {
-							[config.properties.tasks_kanban_status.type]: {
-								// Can be Status or State
-								name: config.properties.tasks_kanban_status_value,
-							},
-						},
-					}),
 					...(config.properties.tasks_priority_value && {
 						[config.properties.tasks_priority.name]: {
 							[config.properties.tasks_priority.type]: {
@@ -1677,7 +1619,7 @@ export default {
 							rich_text: [
 								{
 									text: {
-										content: `This task was created via the following source: ${source}. The cost of this request was ${costString}.`,
+										content: `This task was created via the following source: ${source}.`,
 									},
 								},
 							],
@@ -1854,14 +1796,6 @@ export default {
 						config.original_body.secret
 				);
 				await this.createFallbackTask(error, true, "config");
-			}
-
-			if (this.kanban_status) {
-				if (this.kanban_status_value.length < 1) {
-					throw new Error(
-						`Kanban Status Value property must have a value selected. If you don't see this property in the Configuration tab, please hit the Refresh Fields button.`
-					);
-				}
 			}
 
 			if (this.priority) {
