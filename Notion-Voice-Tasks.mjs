@@ -71,7 +71,7 @@ export default {
 	description:
 		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
 	key: "notion-voice-tasks",
-	version: "0.0.5",
+	version: "0.0.6",
 	type: "action",
 	props: {
 		openai: {
@@ -1827,7 +1827,19 @@ export default {
 		// Set all the user's prop choices in the config
 		this.setPropChoices();
 		console.log("Config settings:");
-		console.log(JSON.stringify(config, null, 2));
+		
+		// Create a sanitized version of config for logging (avoid circular references)
+		const sanitizedConfig = {
+			notion_dbs: config.notion_dbs,
+			default_workflow_source: config.default_workflow_source,
+			maxtokens: config.maxtokens,
+			model: config.model,
+			properties: config.properties,
+			filters: config.filters,
+			original_body: config.original_body,
+			// Exclude system_messages and pipedream to avoid circular references
+		};
+		console.log(JSON.stringify(sanitizedConfig, null, 2));
 
 		// Bring in the return value from the ChatGPT step
 		const chatGPT_results = await this.chatGPTHandler(steps);
