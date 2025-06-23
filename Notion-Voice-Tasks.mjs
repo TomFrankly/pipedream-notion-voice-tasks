@@ -71,7 +71,7 @@ export default {
 	description:
 		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
 	key: "notion-voice-tasks",
-	version: "0.0.4",
+	version: "0.0.5",
 	type: "action",
 	props: {
 		openai: {

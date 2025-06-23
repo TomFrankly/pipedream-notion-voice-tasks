@@ -20,14 +20,25 @@ export default {
 			const scheme = Joi.object({
 				task: Joi.string()
 					.custom((value, helpers) => {
-						const alphanumeric = new RegExp(
-							"^[a-zA-Z0-9À-ÖØ-öø-ÿ.,!?;$'\"&#:“”’\\-–— ]*$"
-						);
-						if (!alphanumeric.test(value) && !emojiRegex().test(value)) {
+						// Option 1: Unicode-aware validation (current implementation)
+						// Allow Unicode letters, numbers, emoji, and common punctuation
+						// This supports all languages while still preventing potentially problematic characters
+						const unicodePattern = /^[\p{L}\p{N}\p{P}\p{Z}\p{S}\p{Emoji}]*$/u;
+						if (!unicodePattern.test(value)) {
 							return helpers.message(
-								"Task must only contain letters, numbers, emoji, and punctuation."
+								"Task contains unsupported characters. Please use letters, numbers, emoji, and common punctuation only."
 							);
 						}
+						
+						// Option 2: Minimal validation (uncomment below and comment out Option 1 if preferred)
+						// This only prevents control characters while allowing all printable characters
+						// const controlCharPattern = /[\x00-\x1F\x7F]/;
+						// if (controlCharPattern.test(value)) {
+						//     return helpers.message(
+						//         "Task contains control characters which are not allowed."
+						//     );
+						// }
+						
 						return value;
 					})
 					.required(),
