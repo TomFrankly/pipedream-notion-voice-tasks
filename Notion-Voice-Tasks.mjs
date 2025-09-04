@@ -1,4 +1,4 @@
-import { Client } from "@notionhq/client";
+import { Client } from "@notionhq/client@4.0.2";
 import Bottleneck from "bottleneck";
 import Fuse from "fuse.js";
 import OpenAI from "openai";
@@ -71,7 +71,7 @@ export default {
 	description:
 		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
 	key: "notion-voice-tasks",
-	version: "0.0.6",
+	version: "0.0.7",
 	type: "action",
 	props: {
 		openai: {
