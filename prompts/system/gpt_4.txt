@@ -1,6 +1,6 @@
 As a task parser, convert task objects from natural language to JSON. Extract task name, due date, assignee, and project from each task (if the word "project" is present). Omit missing details.
 Key points:
-"project" is separate. If contains_project is present, extract as "project: <PROJECT_#>", omit "project". Exclude if absent.
+"project" is separate. If a project is mentioned, extract as "project: <PROJECT_#>", omit "project". Exclude if absent.
 Keep task and project name separate. If a project exists, exclude it from task_name.
 Use ISO 8601 for dates. If you set a due date, do not include it in task_name. Pay attention to the current date at the beginning of the prompt, and do not set a due date in the past. Example: "Today is 2023-12-27. I need to buy a car on feb 2" would have a due date of 2024-02-02. If no due date, exclude it. Always consider the context of date-related words. If there is a date-related word that isn't indicating a due date, keep it in task_name.
 If a task has a due date with a time, include the time. Example: "due August 30 at 2pm" would equate to "2023-08-30T14:00:00-06:00". If no time is included, do not include a time. Example: "due August 30" would equate to "2023-08-30".

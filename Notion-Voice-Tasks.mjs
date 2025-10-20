@@ -55,7 +55,7 @@ const config = {
 			}
 		},
 		async gpt4_system() {
-			const hard_coded = `As a task parser, convert task objects from natural language to JSON. Extract task name, due date, assignee, and project from each task (if the word \"project\" is present). Omit missing details.\nKey points:\n\"project\" is separate. If contains_project is present, extract as \"project: <PROJECT_#>\", omit \"project\". Exclude if absent.\nKeep task and project name separate. If a project exists, exclude it from task_name.\nUse ISO 8601 for dates. If you set a due date, do not include it in task_name. If no due date, exclude it. Always consider the context of date-related words. If there is a date-related word that isn\'t indicating a due date, keep it in task_name.\nSet assignee for each task. Use \"${this.user_name}\" for self-assignments.\nCapitalize the first word of the task name.\nIn the full_task_details property, include the full task details, including the project name, assignee, and due date. This is the original task string.\nExample:\n\nInput:\nToday is 2023-06-12T21:00:00-06:00.\n[\n{\n\"task_text\": \"Today I need to book a Friday dinner date with Anna\",\n\"due_date_confidence\": \"High\"\n},\n{\n\"task_text\": \"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\",\n\"due_date_confidence\": \"High\",\n\"contains_project\": \"Contains Project\"\n}\n]\n\nOutput:\n\n[\n{\n\"task_name\": \"Book a Friday dinner date with Anna\",\n\"due_date\": \"2023-06-12\",\n\"assignee\": \"${this.user_name}\",\n\"full_task_details\",\"Today I need to book a Friday dinner date with anna\"\n},\n{\n\"task_name\": \"Track the guitars\",\n\"due_date\": \"2023-06-13T17:00:00-06:00\",\n\"assignee\": \"Carl\",\n\"project\": \"Breaking Benjamin tribute\",\n\"full_task_details\",\"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\"\n}\n]\n\nCritical: You only write JSON. Do not write text that isn\'t JSON.`;
+			const hard_coded = `As a task parser, convert task objects from natural language to JSON. Extract task name, due date, assignee, and project from each task (if the word \"project\" is present). Omit missing details.\nKey points:\n\"project\" is separate. If a project is specifically mentioned, extract as \"project: <PROJECT_#>\", omit \"project\". Exclude if absent.\nKeep task and project name separate. If a project exists, exclude it from task_name.\nUse ISO 8601 for dates. If you set a due date, do not include it in task_name. If no due date, exclude it. Always consider the context of date-related words. If there is a date-related word that isn\'t indicating a due date, keep it in task_name.\nSet assignee for each task. Use \"${this.user_name}\" for self-assignments.\nCapitalize the first word of the task name.\nIn the full_task_details property, include the full task details, including the project name, assignee, and due date. This is the original task string.\nExample:\n\nInput:\nToday is 2023-06-12T21:00:00-06:00.\n\nToday I need to book a Friday dinner date with Anna, and Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm.\n\nOutput:\n\n[\n{\n\"task_name\": \"Book a Friday dinner date with Anna\",\n\"due_date\": \"2023-06-12\",\n\"assignee\": \"${this.user_name}\",\n\"full_task_details\",\"Today I need to book a Friday dinner date with anna\"\n},\n{\n\"task_name\": \"Track the guitars\",\n\"due_date\": \"2023-06-13T17:00:00-06:00\",\n\"assignee\": \"Carl\",\n\"project\": \"Breaking Benjamin tribute\",\n\"full_task_details\",\"Carl needs to track the guitars for the Breaking Benjamin tribute project by tomorrow at 5pm\"\n}\n]\n\nCritical: You only write JSON. Do not write text that isn\'t JSON.`;
 
 			if (this.remote !== null && this.remote?.gpt_4 !== undefined) {
 				return this.remote.gpt_4.replace("'{user_name}'", this.user_name);
@@ -71,7 +71,7 @@ export default {
 	description:
 		"Uses ChatGPT to parse the details from transcribed voice tasks, then sends them to Notion.",
 	key: "notion-voice-tasks",
-	version: "0.0.7",
+	version: "0.0.8",
 	type: "action",
 	props: {
 		openai: {
@@ -519,6 +519,28 @@ export default {
 						default: false,
 						optional: true,
 					},
+					reasoning_effort: {
+						type: "string",
+						label: "Reasoning Effort (for GPT-5+ only)",
+						description: "Choose how much computational effort the model should spend reasoning through the prompt and producing an accurate, reliable output. This only applies to GPT-5+ models. GPT-5-Pro only supports 'high'.",
+						options: [
+							{ label: "Minimal", value: "minimal" },
+							{ label: "Low", value: "low" },
+							{ label: "Medium", value: "medium" },
+							{ label: "High", value: "high" },
+						],
+						default: "low",
+						optional: true,
+					},
+					temperature: {
+						type: "integer",
+						label: "Temperature",
+						description: `Controls the "creativity" of the model. Lower values (e.g. 0) make the output more focused and deterministic, while higher values (e.g. 20) make it more random and creative. Value should be between 0 and 20. GPT-5 models do not support this property, so it will be ignored if you select a GPT-5 model.`,
+						default: 0,
+						min: 0,
+						max: 20,
+						optional: true,
+					},
 				}),
 			...(this.advanced_options === true && {
 				remove_midnight: {
@@ -587,8 +609,8 @@ export default {
 			// Fetch the system messages
 			await this.fetchPrompts();
 
-			if (config.model.includes("gpt-4")) {
-				console.log("GPT-4 selected. Initiating 1-round task processing.");
+			if (config.model.includes("gpt-4") || config.model.includes("gpt-5")) {
+				console.log("GPT-4 or GPT-5 selected. Initiating 1-round task processing.");
 
 				// Send the validated input to ChatGPT
 				const gpt4Response = await this.parseTaskWithGPT(
@@ -763,7 +785,7 @@ export default {
 					async (bail, number) => {
 						console.log(`Attempt number ${number} to send prompt to OpenAI.`);
 						try {
-							const response = await openai.chat.completions.create({
+							const data = {
 								model: config.model,
 								messages: [
 									{ role: "system", content: systemMessage },
@@ -772,9 +794,18 @@ export default {
 										content: rounds[roundNum],
 									},
 								],
-								temperature: 0,
-							});
+							}
 
+							if (!config.model.includes("gpt-5")) {
+								data.temperature = this.temperature / 10 || 0;
+							}
+
+							if (config.model.includes("gpt-5")) {
+								data.reasoning_effort = this.reasoning_effort || "low"
+							}
+
+							const response = await openai.chat.completions.create(data);
+							
 							// Return the response
 							return response;
 						} catch (error) {
